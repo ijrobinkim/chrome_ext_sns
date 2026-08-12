@@ -42,7 +42,8 @@
            el.getAttribute('data-original') || 
            el.getAttribute('data-detail-url') || 
            el.getAttribute('data-origin-src') || 
-           el.getAttribute('src') || '';
+           el.getAttribute('src') || 
+           el.src || '';
   }
 
   /**
@@ -207,13 +208,22 @@
     });
 
     // Fallback Scan: scan ALL images on the page containing coupangcdn.com or image/
-    if (mainImgUrls.size === 0 && detailImgUrls.size === 0) {
+    if (mainImgUrls.size === 0) {
       document.querySelectorAll('img').forEach(img => {
         const src = getElementImageSrc(img);
-        if (isValidProductImage(src) && (src.includes('coupangcdn.com') || src.includes('/image/'))) {
-          if (img.closest('.prod-atf') || img.closest('.prod-image-container') || img.closest('.prod-image-gallery')) {
+        if (isValidProductImage(src) && (src.includes('coupangcdn.com') || src.includes('/image/') || src.includes('thumbnail'))) {
+          if (img.closest('.prod-atf') || img.closest('.prod-image-container') || img.closest('.prod-image-gallery') || img.closest('#repImage') || img.closest('.prod-atf-left') || img.closest('.prod-image')) {
             mainImgUrls.add(cleanImageUrl(src));
-          } else {
+          }
+        }
+      });
+    }
+
+    if (detailImgUrls.size === 0) {
+      document.querySelectorAll('img').forEach(img => {
+        const src = getElementImageSrc(img);
+        if (isValidProductImage(src) && (src.includes('coupangcdn.com') || src.includes('/image/') || src.includes('thumbnail'))) {
+          if (!img.closest('.prod-atf') && !img.closest('.prod-image-container') && !img.closest('.prod-image-gallery') && !img.closest('#repImage') && !img.closest('.prod-atf-left') && !img.closest('.prod-image')) {
             detailImgUrls.add(cleanImageUrl(src));
           }
         }
