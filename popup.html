@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>SNS Metric Overlay</title>
+  <link rel="stylesheet" href="styles/content.css">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="header">
+    <h1>📈 SNS Metric Overlay</h1>
+    <label class="switch">
+      <input type="checkbox" id="toggle-extension" checked>
+      <span class="slider"></span>
+    </label>
+  </div>
+
+  <div class="content">
+    <div class="platform-chips">
+      <span class="chip">Threads</span>
+      <span class="chip">YouTube</span>
+      <span class="chip">Instagram</span>
+      <span class="chip">Xiaohongshu</span>
+    </div>
+
+    <div class="section-title">📊 수식 가이드</div>
+    <div class="formula-card">
+      <div class="formula-item">
+        <span class="formula-name">성과배수</span>
+        <span class="formula-expr">조회 / 팔로워</span>
+      </div>
+      <div class="formula-item">
+        <span class="formula-name">인게이지</span>
+        <span class="formula-expr">(좋아요+댓글+리포스트+공유)/조회</span>
+      </div>
+      <div class="formula-item">
+        <span class="formula-name">시간당 조회</span>
+        <span class="formula-expr">조회 / 게시 후 경과시간(h)</span>
+      </div>
+      <div class="formula-item">
+        <span class="formula-name">확산 수치</span>
+        <span class="formula-expr">(리포스트+공유)/조회 * 1000</span>
+      </div>
+    </div>
+
+    <div class="section-title">✨ 실시간 배지 미리보기</div>
+    <div class="preview-box" id="badge-preview">
+      <!-- Injected by popup.js -->
+    </div>
+
+    <button id="btn-open-dashboard" style="width:100%;margin-top:14px;padding:10px;background:linear-gradient(135deg,#7c3aed,#6366f1);color:#fff;border:none;border-radius:12px;font-weight:700;font-size:13px;cursor:pointer;box-shadow:0 4px 12px rgba(124,58,237,0.3);">
+      📁 수집한 스레드 데이터 보드 열기
+    </button>
+  </div>
+
+  <script src="src/utils/formatter.js"></script>
+  <script src="src/utils/calculator.js"></script>
+  <script src="src/ui/badgeRenderer.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>스레드 데이터 보드 - SNS Metric Dashboard</title>
+  <link rel="stylesheet" href="styles/dashboard.css">
+  <link rel="stylesheet" href="styles/content.css">
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- Left Navigation Sidebar (Photo 1) -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <span>관리자 모드</span>
+      </div>
+
+      <div class="sidebar-view-toggle">
+        <button class="view-toggle-btn active">관리자 보기</button>
+        <button class="view-toggle-btn">일반 보기</button>
+      </div>
+
+      <!-- Navigation Section 1: 탐색 -->
+      <div class="nav-section">
+        <div class="nav-title">탐색</div>
+        <a href="#" class="nav-item">🔥 실시간 키워드</a>
+        <a href="#" class="nav-item">📈 트렌드 데이터</a>
+        <a href="#" class="nav-item">🛒 쇼핑 베스트</a>
+        <a href="#" class="nav-item">📦 상품 보드</a>
+      </div>
+
+      <!-- Navigation Section 2: 발행 -->
+      <div class="nav-section">
+        <div class="nav-title">발행</div>
+        <a href="#" class="nav-item active">📢 스레드</a>
+      </div>
+
+      <!-- Navigation Section 3: 수익·성장 -->
+      <div class="nav-section">
+        <div class="nav-title">수익·성장</div>
+        <a href="#" class="nav-item">📊 수익 실적</a>
+        <a href="#" class="nav-item">🏆 챌린지</a>
+        <a href="#" class="nav-item">💎 랭킹</a>
+      </div>
+    </aside>
+
+    <!-- Main Wrapper -->
+    <div class="main-wrapper">
+      <!-- Top Navbar (Photo 1) -->
+      <header class="top-navbar">
+        <div class="top-search-bar">
+          <span>🔍</span>
+          <input type="text" placeholder="스레드 피드 검색..." id="top-search-input">
+        </div>
+
+        <div class="top-user-menu">
+          <div class="credit-badge">⚡ 1,397 크레딧</div>
+          <button class="quick-start-btn">📖 1초만에 시작하기</button>
+          <div class="avatar">Me</div>
+        </div>
+      </header>
+
+      <!-- Main Content Body (Photo 1) -->
+      <main class="content-body">
+        <!-- Status Tabs Row -->
+        <div class="tabs-row">
+          <div class="status-tabs">
+            <button class="tab-btn active" data-status="all">전체 <span class="badge-count" id="count-all">0</span></button>
+            <button class="tab-btn" data-status="collected">수집 <span class="badge-count" id="count-collected">0</span></button>
+            <button class="tab-btn" data-status="analyzed">분석 <span class="badge-count" id="count-analyzed">0</span></button>
+            <button class="tab-btn" data-status="editing">편집 <span class="badge-count" id="count-editing">1</span></button>
+            <button class="tab-btn" data-status="failed">발행 실패 <span class="badge-count" id="count-failed">0</span></button>
+            <button class="tab-btn" data-status="reserved">예약 <span class="badge-count" id="count-reserved">0</span></button>
+            <button class="tab-btn" data-status="uploaded">업로드 <span class="badge-count" id="count-uploaded">0</span></button>
+          </div>
+
+          <button class="action-collect-btn" id="btn-goto-collect">수집하러 가기 ✨</button>
+        </div>
+
+        <!-- Filter Controls Row (Photo 1) -->
+        <div class="filter-controls">
+          <div class="search-filter-group">
+            <input type="text" class="input-search" id="filter-keyword" placeholder="본문·작성자 검색">
+            <select class="select-filter" id="filter-grade">
+              <option value="all">전체 등급</option>
+              <option value="super">강력 / 폭발 (>=8배)</option>
+              <option value="medium">흥행 / 우수 (>=3배)</option>
+              <option value="normal">보통 / 약함 (&lt;3배)</option>
+            </select>
+          </div>
+
+          <div class="layout-toggle-group">
+            <span class="item-count-text" id="total-item-count">1개</span>
+            <div class="toggle-pill-group">
+              <button class="toggle-pill-btn" id="btn-grid-mode">그리드</button>
+              <button class="toggle-pill-btn active" id="btn-list-mode">리스트</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Data Table Container (Photo 1) -->
+        <div class="table-card-container">
+          <table class="data-table" id="dashboard-table">
+            <thead>
+              <tr>
+                <th style="width: 40px;"><input type="checkbox" id="check-all"></th>
+                <th style="width: 40px;">#</th>
+                <th>콘텐츠 - 작성일 ↕</th>
+                <th>조회 ↕</th>
+                <th>좋아요 ↕</th>
+                <th>답글 ↕</th>
+                <th>상태 ↕</th>
+                <th>성과 배수 ↕</th>
+                <th>수집일 ↕</th>
+                <th style="text-align: right;">작업</th>
+              </tr>
+            </thead>
+            <tbody id="table-body">
+              <!-- Dynamically rendered rows -->
+            </tbody>
+          </table>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="src/lib/supabase.min.js"></script>
+  <script src="src/utils/supabaseClient.js"></script>
+  <script src="src/utils/formatter.js"></script>
+  <script src="src/utils/calculator.js"></script>
+  <script src="src/utils/exporter.js"></script>
+  <script src="src/dashboard.js"></script>
+</body>
+</html>

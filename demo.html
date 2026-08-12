@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SNS Metric Badge & Action Menu - Interactive Demo</title>
+  <link rel="stylesheet" href="styles/content.css">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #0d0f14;
+      color: #e0e0e0;
+      margin: 0;
+      padding: 40px;
+    }
+
+    .demo-header {
+      max-width: 900px;
+      margin: 0 auto 40px auto;
+      text-align: center;
+    }
+
+    .demo-header h1 {
+      font-size: 26px;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+
+    .demo-header p {
+      color: #a0a0a0;
+      font-size: 14px;
+    }
+
+    .container-wrapper {
+      max-width: 600px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    /* Threads Mock Card */
+    .threads-mock-card {
+      background-color: #181818;
+      border: 1px solid #2e2e2e;
+      border-radius: 20px;
+      padding: 24px;
+      position: relative;
+      overflow: visible !important;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    .threads-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .threads-avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #4f46e5, #06b6d4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: #fff;
+    }
+
+    .threads-user {
+      font-weight: 700;
+      font-size: 15px;
+      color: #fff;
+    }
+
+    .threads-time {
+      color: #777;
+      font-size: 13px;
+      margin-left: 6px;
+    }
+
+    .threads-body {
+      font-size: 15px;
+      line-height: 1.6;
+      color: #ececec;
+      margin-bottom: 16px;
+    }
+
+    .threads-img-box {
+      width: 100%;
+      height: 220px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #e05252, #e59d4f);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: bold;
+      margin-bottom: 16px;
+    }
+
+    .threads-actions {
+      display: flex;
+      gap: 20px;
+      color: #aaa;
+      font-size: 14px;
+      border-top: 1px solid #2b2b2b;
+      padding-top: 14px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="demo-header">
+    <h1>🚀 Threads Metric Badges & Action Menu Demo</h1>
+    <p>사진 1(좌측 수직 뱃지 목록 & 우측 🐥 버튼) 및 사진 2(다운동로드/수집/댓글내보내기 메뉴) 완벽 구현 데모</p>
+  </div>
+
+  <div class="container-wrapper">
+    
+    <!-- Threads Demo Card (Matching Photo 1 & Photo 2) -->
+    <div class="threads-mock-card" id="threads-demo-card">
+      <div class="threads-header">
+        <div class="threads-avatar">D</div>
+        <div>
+          <span class="threads-user">daaaa.heeee</span>
+          <span class="threads-time">19시간</span>
+        </div>
+      </div>
+      <div class="threads-body">
+        와... 이거 진짜 신세계다ㄷㄷ<br>
+        길이 조절로 설치할 수 있는 커튼 발견함;;<br>
+        이사갈 땐 떼가야징 ㅋㅋㅋㅋ
+      </div>
+      
+      <div class="threads-img-box">
+        🖼️ 커튼 설치 이미지 샘플
+      </div>
+
+      <div class="threads-actions">
+        <span>❤️ 22</span>
+        <span>💬 2</span>
+        <span>🔁 4</span>
+        <span>✈️ 1</span>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="src/utils/formatter.js"></script>
+  <script src="src/utils/calculator.js"></script>
+  <script src="src/utils/exporter.js"></script>
+  <script src="src/ui/badgeRenderer.js"></script>
+  <script src="src/ui/actionMenu.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const card = document.getElementById('threads-demo-card');
+      
+      // Calculate Photo 1 matching metrics: 9.8x performance, 4,481 views, 457 followers, 0.6% eng, 232/hr, 2.5 diff
+      const metrics = SNSCalculator.calculateMetrics({
+        views: 4481,
+        followers: 457,
+        likes: 22,
+        comments: 2,
+        reposts: 4,
+        shares: 1,
+        timeElapsed: 19
+      });
+
+      // 1. Render Left Vertical Badges (Photo 1)
+      SNSBadgeRenderer.renderMetricsOverlay(card, metrics, { mode: 'float' });
+
+      // 2. Render Right Chick Action Button 🐥 (Photo 1 & Photo 2 Modal Trigger)
+      const cardData = {
+        author: 'daaaa.heeee',
+        text: '와... 이거 진짜 신세계다ㄷㄷ 길이 조절로 설치할 수 있는 커튼 발견함;; 이사갈 땐 떼가야징 ㅋㅋㅋㅋ',
+        link: 'https://www.threads.com/@daaaa.heeee/post/demo',
+        timeText: '19시간',
+        metrics
+      };
+      const chickBtn = SNSActionMenu.createActionButton(card, cardData);
+      card.appendChild(chickBtn);
+    });
+  </script>
+</body>
+</html>

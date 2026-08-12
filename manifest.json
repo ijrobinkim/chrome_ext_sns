@@ -1,0 +1,86 @@
+{
+  "manifest_version": 3,
+  "name": "SNS Metric Badge Overlay",
+  "version": "1.1.2",
+  "description": "Threads, YouTube, Instagram, Xiaohongshu 성과배수, 인게이지, 시간당 조회수, 확산 수치 오버레이 배지 및 다운로드/수집 메뉴",
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "https://threads.com/*",
+    "https://*.threads.com/*",
+    "https://threads.net/*",
+    "https://*.threads.net/*",
+    "https://youtube.com/*",
+    "https://*.youtube.com/*",
+    "https://instagram.com/*",
+    "https://*.instagram.com/*",
+    "https://xiaohongshu.com/*",
+    "https://*.xiaohongshu.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://threads.com/*",
+        "https://*.threads.com/*",
+        "https://threads.net/*",
+        "https://*.threads.net/*",
+        "https://youtube.com/*",
+        "https://*.youtube.com/*",
+        "https://instagram.com/*",
+        "https://*.instagram.com/*",
+        "https://xiaohongshu.com/*",
+        "https://*.xiaohongshu.com/*"
+      ],
+      "js": [
+        "src/lib/supabase.min.js",
+        "src/utils/supabaseClient.js",
+        "src/utils/formatter.js",
+        "src/utils/calculator.js",
+        "src/utils/exporter.js",
+        "src/ui/badgeRenderer.js",
+        "src/ui/actionMenu.js",
+        "src/parsers/threadsParser.js",
+        "src/parsers/youtubeParser.js",
+        "src/parsers/instagramParser.js",
+        "src/parsers/xiaohongshuParser.js",
+        "src/content.js"
+      ],
+      "css": [
+        "styles/content.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "src/lib/supabase.min.js",
+        "src/utils/supabaseClient.js",
+        "collected.html",
+        "styles/dashboard.css",
+        "styles/content.css",
+        "src/dashboard.js",
+        "src/utils/formatter.js",
+        "src/utils/calculator.js",
+        "src/utils/exporter.js"
+      ],
+      "matches": [
+        "https://threads.com/*",
+        "https://*.threads.com/*",
+        "https://threads.net/*",
+        "https://*.threads.net/*",
+        "https://youtube.com/*",
+        "https://*.youtube.com/*",
+        "https://instagram.com/*",
+        "https://*.instagram.com/*",
+        "https://xiaohongshu.com/*",
+        "https://*.xiaohongshu.com/*"
+      ]
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "SNS Metric Overlay Options"
+  }
+}
