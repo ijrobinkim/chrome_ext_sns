@@ -171,20 +171,41 @@
       }
     });
 
-    // --- Blog Post Generation Modal Handling ---
+    // --- Blog & Threads Post Generation Modal Handling ---
     const btnCreateBlogModal = document.getElementById('btn-create-blog-modal');
     const modalBlog = document.getElementById('modal-blog-generation');
     const btnCloseBlog = document.getElementById('btn-close-blog');
     const inputApiKey = document.getElementById('gemini-api-key-input');
     const btnSaveApiKey = document.getElementById('btn-save-api-key');
+    const statusMessage = document.getElementById('blog-status-message');
+
+    // Tab buttons
+    const tabBlogMode = document.getElementById('tab-blog-mode');
+    const tabThreadsMode = document.getElementById('tab-threads-mode');
+
+    // View Containers
+    const containerBlogView = document.getElementById('container-blog-view');
+    const containerThreadsView = document.getElementById('container-threads-view');
+
+    // Blog Elements
     const btnGenerateBlogRun = document.getElementById('btn-generate-blog-run');
     const selectBlogStyle = document.getElementById('blog-style-select');
-    const statusMessage = document.getElementById('blog-status-message');
     const resultTitle = document.getElementById('blog-result-title');
     const resultBody = document.getElementById('blog-result-body');
     const btnCopyTitle = document.getElementById('btn-copy-blog-title');
     const btnCopyMarkdown = document.getElementById('btn-copy-blog-markdown');
     const btnCopyHTML = document.getElementById('btn-copy-blog-html');
+
+    // Threads Elements
+    const btnGenerateThreadsRun = document.getElementById('btn-generate-threads-run');
+    const selectThreadsStyle = document.getElementById('threads-style-select');
+    const resultThreadsMain = document.getElementById('threads-result-main');
+    const resultThreadsReply = document.getElementById('threads-result-reply');
+    const btnCopyThreadsMain = document.getElementById('btn-copy-threads-main');
+    const btnCopyThreadsReply = document.getElementById('btn-copy-threads-reply');
+
+    // Active mode state ('blog' or 'threads')
+    let activeMode = 'blog';
 
     // Load saved API Key on start
     if (inputApiKey && window.AIBlogClient) {
@@ -199,6 +220,39 @@
       });
     }
 
+    // Tab switching event listeners
+    if (tabBlogMode && tabThreadsMode && containerBlogView && containerThreadsView) {
+      tabBlogMode.addEventListener('click', () => {
+        activeMode = 'blog';
+        tabBlogMode.style.background = 'linear-gradient(135deg, #7c3aed 0%, #6366f1 100%)';
+        tabBlogMode.style.color = '#ffffff';
+        tabBlogMode.style.border = 'none';
+
+        tabThreadsMode.style.background = '#1e1e2f';
+        tabThreadsMode.style.color = '#94a3b8';
+        tabThreadsMode.style.border = '1px solid #31324f';
+
+        containerBlogView.style.display = 'flex';
+        containerThreadsView.style.display = 'none';
+        if (statusMessage) statusMessage.style.display = 'none';
+      });
+
+      tabThreadsMode.addEventListener('click', () => {
+        activeMode = 'threads';
+        tabThreadsMode.style.background = 'linear-gradient(135deg, #7c3aed 0%, #6366f1 100%)';
+        tabThreadsMode.style.color = '#ffffff';
+        tabThreadsMode.style.border = 'none';
+
+        tabBlogMode.style.background = '#1e1e2f';
+        tabBlogMode.style.color = '#94a3b8';
+        tabBlogMode.style.border = '1px solid #31324f';
+
+        containerThreadsView.style.display = 'flex';
+        containerBlogView.style.display = 'none';
+        if (statusMessage) statusMessage.style.display = 'none';
+      });
+    }
+
     if (btnCreateBlogModal && modalBlog && modalView) {
       btnCreateBlogModal.addEventListener('click', () => {
         // Hide view modal and show blog modal
@@ -208,10 +262,19 @@
         // Reset results fields
         if (resultTitle) resultTitle.value = '';
         if (resultBody) resultBody.value = '';
+        if (resultThreadsMain) resultThreadsMain.value = '';
+        if (resultThreadsReply) resultThreadsReply.value = '';
+
         if (btnCopyTitle) btnCopyTitle.style.display = 'none';
         if (btnCopyMarkdown) btnCopyMarkdown.style.display = 'none';
         if (btnCopyHTML) btnCopyHTML.style.display = 'none';
+        if (btnCopyThreadsMain) btnCopyThreadsMain.style.display = 'none';
+        if (btnCopyThreadsReply) btnCopyThreadsReply.style.display = 'none';
+
         if (statusMessage) statusMessage.style.display = 'none';
+
+        // Reset tab to default (Blog)
+        if (tabBlogMode) tabBlogMode.click();
       });
     }
 
@@ -233,7 +296,7 @@
       });
     }
 
-    // Run Generator
+    // Run Blog Generator
     if (btnGenerateBlogRun && window.AIBlogClient) {
       btnGenerateBlogRun.addEventListener('click', async () => {
         if (!activeViewingPostId) return;
@@ -291,7 +354,64 @@
       });
     }
 
-    // Copy Handlers
+    // Run Threads Generator
+    if (btnGenerateThreadsRun && window.AIBlogClient) {
+      btnGenerateThreadsRun.addEventListener('click', async () => {
+        if (!activeViewingPostId) return;
+        const currentPost = allPosts.find(p => String(p.id) === String(activeViewingPostId));
+        if (!currentPost) {
+          alert('상품 정보 데이터를 찾을 수 없습니다.');
+          return;
+        }
+
+        const apiKey = window.AIBlogClient.getGeminiKey();
+        if (!apiKey) {
+          alert('⚠️ Google Gemini API Key를 먼저 입력하고 저장해 주세요!');
+          if (inputApiKey) inputApiKey.focus();
+          return;
+        }
+
+        // Show status
+        if (statusMessage) {
+          statusMessage.style.background = 'rgba(59, 130, 246, 0.1)';
+          statusMessage.style.border = '1px solid rgba(59, 130, 246, 0.3)';
+          statusMessage.style.color = '#93c5fd';
+          statusMessage.textContent = '🤖 AI 분석 및 스레드 바이럴 텍스트 작성 중... (약 5초 소요)';
+          statusMessage.style.display = 'block';
+        }
+        if (btnGenerateThreadsRun) btnGenerateThreadsRun.disabled = true;
+
+        try {
+          const style = selectThreadsStyle ? selectThreadsStyle.value : 'hook';
+          const inputPartnersLink = document.getElementById('coupang-partners-link-input');
+          const customLink = inputPartnersLink ? inputPartnersLink.value.trim() : '';
+
+          const result = await window.AIBlogClient.generateThreadsPost(currentPost, style, customLink);
+          
+          if (resultThreadsMain) resultThreadsMain.value = result.main;
+          if (resultThreadsReply) resultThreadsReply.value = result.reply;
+
+          // Show copy buttons
+          if (btnCopyThreadsMain) btnCopyThreadsMain.style.display = 'inline-flex';
+          if (btnCopyThreadsReply) btnCopyThreadsReply.style.display = 'inline-flex';
+
+          if (statusMessage) {
+            statusMessage.textContent = '✅ 스레드 포스팅 작성 완료!';
+            statusMessage.style.background = 'rgba(16, 185, 129, 0.1)';
+            statusMessage.style.border = '1px solid rgba(16, 185, 129, 0.3)';
+            statusMessage.style.color = '#34d399';
+          }
+        } catch (err) {
+          console.error(err);
+          alert(err.message);
+          if (statusMessage) statusMessage.style.display = 'none';
+        } finally {
+          if (btnGenerateThreadsRun) btnGenerateThreadsRun.disabled = false;
+        }
+      });
+    }
+
+    // Copy Handlers for Blog
     if (btnCopyTitle && resultTitle) {
       btnCopyTitle.addEventListener('click', () => {
         navigator.clipboard.writeText(resultTitle.value).then(() => {
@@ -329,6 +449,23 @@
           navigator.clipboard.writeText(mdText).then(() => {
             alert('📋 마크다운 텍스트 복사로 대체되었습니다.');
           });
+        });
+      });
+    }
+
+    // Copy Handlers for Threads
+    if (btnCopyThreadsMain && resultThreadsMain) {
+      btnCopyThreadsMain.addEventListener('click', () => {
+        navigator.clipboard.writeText(resultThreadsMain.value).then(() => {
+          alert('📋 스레드 본문(노링크 후킹글)이 클립보드에 복사되었습니다!');
+        });
+      });
+    }
+
+    if (btnCopyThreadsReply && resultThreadsReply) {
+      btnCopyThreadsReply.addEventListener('click', () => {
+        navigator.clipboard.writeText(resultThreadsReply.value).then(() => {
+          alert('📋 스레드 댓글(링크+공정위 문구)이 클립보드에 복사되었습니다!');
         });
       });
     }

@@ -181,11 +181,119 @@ ${productData.content}
     };
   }
 
+  /**
+   * Call Google Gemini API to generate Threads viral posts (separated into main post and comment thread)
+   */
+  async function generateThreadsPost(productData, style = 'hook', customLink = '') {
+    const key = getGeminiKey();
+    if (!key) {
+      throw new Error('Gemini API Key가 설정되지 않았습니다. 상단 입력창에 등록해 주세요.');
+    }
+
+    const model = 'gemini-3.5-flash';
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
+
+    const optionDescriptions = productData.options && productData.options.length > 0
+      ? productData.options.join(', ')
+      : '없음';
+
+    const affiliateLink = customLink.trim() || productData.link || '#';
+
+    const systemPrompt = `
+당신은 스레드(Threads)에서 월 1,000만 원 이상의 수익을 창출하는 바이럴 마케터이자 제휴 마케팅 카피라이팅 전문가입니다.
+스레드 플랫폼의 노출 알고리즘과 섀도우밴(정지) 정책을 철저하게 준수하면서, 독자의 호기심을 극대화해 스크롤을 멈추게(Hooking) 만드는 바이럴 포스팅을 작성해야 합니다.
+
+반드시 아래 출력 형식을 정확하게 지켜주세요:
+[본문]
+여기에 스레드 본문 작성
+===
+[댓글]
+여기에 댓글(타래) 내용 작성
+
+[스레드 본문(노링크) 작성 규칙]
+1. 본문 내 링크 절대 삽입 금지 (알고리즘 노출 제한 우회용).
+2. 분량 제한: 한글 기준 공백 포함 150자 내외로 매우 짧고 컴팩트하게 작성하세요.
+3. 4단 바이럴 구조 구현:
+   - 1행(후킹): 질문이나 파격적인 갈등 유발 멘트로 스크롤 스톱 (예: "솔직히 이거 써보기 전엔 돈낭비인 줄 알았는데;;")
+   - 2~3행(심화): 현실적인 일상 고민, 가격대 정보나 핵심 기능 강조로 과몰입 유도.
+   - 4행(해결책 제시): 제품을 간접적으로 추천하며 궁금증 유발 (광고 티 배제).
+   - 5행(댓글 유도): 독자가 댓글로 자기 생각을 적거나 참견할 수 있는 질문형 맺음말 (예: "혹시 이거 써보신 분 후기 좀요ㅋㅋ", "너라면 이거 삼?")
+4. 말투: 100% 날것의 구어체, 인터넷 신조어, 급식체, 말줄임표(..) 및 적절한 이모지를 사용하여 매우 친근하고 자연스러운 소셜미디어 말투로 작성하세요. (~입니다, ~하세요 금지)
+
+[스레드 댓글/타래 작성 규칙]
+1. 최상단 공정위 문구 의무 결합: 반드시 첫 줄에 다음 공정위 문구를 토씨 하나 틀리지 말고 정확하게 배치하세요:
+"이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다."
+2. 한 줄 후킹 요약: 그 바로 아래에 제품에 대한 한 줄 후킹 요약을 작성하세요 (예: "가성비 끝판왕으로 난리 난 그 선풍기 정보👇")
+3. 제휴 단축 링크: 맨 끝에 제휴 링크(${affiliateLink})를 배치하세요.
+`;
+
+    const userPrompt = `
+[선택된 스타일] : ${style} (hook: 자극적 후킹, tip: 정보/꿀팁 요약, chat: 일상 썰 수다체)
+[상품 정보 데이터]
+- 상품명: ${productData.title}
+- 판매 가격: ${productData.price || '가격정보 확인불가'}
+- 판매자/배송: ${productData.author}
+- 선택 옵션 정보: ${optionDescriptions}
+- 제품 상세 설명 요약:
+${productData.content}
+
+위 정보를 바탕으로 스레드 알고리즘을 터트릴 수 있는 매력적인 바이럴 본문과 댓글 세트를 작성해 주세요.
+`;
+
+    const payload = {
+      contents: [{
+        parts: [{
+          text: systemPrompt + '\n\n' + userPrompt
+        }]
+      }]
+    };
+
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      const errMsg = errData.error?.message || `HTTP ${response.status}`;
+      throw new Error(`Gemini API 호출 실패: ${errMsg}`);
+    }
+
+    const resJson = await response.json();
+    const responseText = resJson.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!responseText) {
+      throw new Error('API 응답 형식이 올바르지 않거나 빈 원고가 반환되었습니다.');
+    }
+
+    let mainPost = '스레드 본문';
+    let replyPost = '스레드 댓글';
+
+    if (responseText.includes('===')) {
+      const parts = responseText.split('===');
+      mainPost = parts[0].replace('[본문]', '').replace(/\[댓글\]/g, '').trim();
+      replyPost = parts[1] ? parts[1].replace('[댓글]', '').trim() : responseText;
+    } else if (responseText.includes('[댓글]')) {
+      const parts = responseText.split('[댓글]');
+      mainPost = parts[0].replace('[본문]', '').trim();
+      replyPost = parts[1] ? parts[1].trim() : responseText;
+    }
+
+    return {
+      main: mainPost,
+      reply: replyPost,
+      raw: responseText
+    };
+  }
+
   // Export to global context
   global.AIBlogClient = {
     getGeminiKey,
     saveGeminiKey,
     generatePost,
+    generateThreadsPost,
     mdToHtml
   };
 })(typeof self !== 'undefined' ? self : (typeof window !== 'undefined' ? window : this));
