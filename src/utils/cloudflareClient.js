@@ -105,6 +105,13 @@
             let price = '-';
             let images = [];
             let options = [];
+            
+            // Persisted AI texts
+            let generatedBlogTitle = '';
+            let generatedBlogBody = '';
+            let generatedThreadsMain = '';
+            let generatedThreadsReply = '';
+            let coupangPartnersLink = '';
 
             // Detect if item.text is JSON-serialized shopping metadata
             if (content.trim().startsWith('{') && content.trim().endsWith('}')) {
@@ -118,6 +125,13 @@
                   images = parsed.images || [];
                   options = parsed.options || [];
                   content = parsed.content || `[${title}] 가격: ${price} / 판매자: ${parsed.seller || '-'}`;
+                  
+                  // Extract AI texts if exist
+                  generatedBlogTitle = parsed.generatedBlogTitle || '';
+                  generatedBlogBody = parsed.generatedBlogBody || '';
+                  generatedThreadsMain = parsed.generatedThreadsMain || '';
+                  generatedThreadsReply = parsed.generatedThreadsReply || '';
+                  coupangPartnersLink = parsed.coupangPartnersLink || '';
                 }
               } catch (e) {
                 console.warn('JSON parse error on post text:', e);
@@ -158,7 +172,14 @@
               likes: item.likes || 0,
               comments: item.comments || 0,
               status: 'published',
-              createdAt: item.saved_at ? new Date(item.saved_at).toLocaleString('ko-KR') : new Date().toLocaleString('ko-KR')
+              createdAt: item.saved_at ? new Date(item.saved_at).toLocaleString('ko-KR') : new Date().toLocaleString('ko-KR'),
+              
+              // Persisted AI fields
+              generatedBlogTitle,
+              generatedBlogBody,
+              generatedThreadsMain,
+              generatedThreadsReply,
+              coupangPartnersLink
             };
           });
 
@@ -242,6 +263,60 @@
     return true;
   }
 
+  async function updateBoardPost(postId, updatedFields) {
+    let posts = getLocalPosts();
+    let updatedPost = null;
+
+    posts = posts.map(p => {
+      if (String(p.id) === String(postId)) {
+        updatedPost = { ...p, ...updatedFields };
+        return updatedPost;
+      }
+      return p;
+    });
+
+    if (!updatedPost) return null;
+
+    saveLocalPosts(posts);
+
+    // Also push to Supabase if connected
+    if (global.supabaseClient) {
+      try {
+        let textValue = '';
+        if (updatedPost.category === 'shopping') {
+          textValue = JSON.stringify({
+            isShopping: true,
+            platform: updatedPost.categoryLabel.includes('네이버') ? 'naver' : 'coupang',
+            title: updatedPost.title,
+            price: updatedPost.price,
+            seller: updatedPost.author,
+            images: updatedPost.images,
+            options: updatedPost.options,
+            content: updatedPost.content,
+            
+            // Persisted AI fields
+            generatedBlogTitle: updatedPost.generatedBlogTitle || '',
+            generatedBlogBody: updatedPost.generatedBlogBody || '',
+            generatedThreadsMain: updatedPost.generatedThreadsMain || '',
+            generatedThreadsReply: updatedPost.generatedThreadsReply || '',
+            coupangPartnersLink: updatedPost.coupangPartnersLink || ''
+          });
+        } else {
+          textValue = updatedPost.content;
+        }
+
+        await global.supabaseClient
+          .from('sns_metrics')
+          .update({ text: textValue })
+          .eq('id', postId);
+      } catch (e) {
+        console.warn('[CloudflareClient] Supabase update failed:', e);
+      }
+    }
+
+    return updatedPost;
+  }
+
   function getCategoryLabel(cat) {
     switch (cat) {
       case 'shopping': return '🛒 쿠팡/쇼핑';
@@ -255,6 +330,7 @@
     fetchBoardPosts,
     saveBoardPost,
     deleteBoardPost,
+    updateBoardPost,
     getLocalPosts,
     getCategoryLabel
   };

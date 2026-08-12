@@ -259,19 +259,45 @@
         modalView.style.display = 'none';
         modalBlog.style.display = 'flex';
         
-        // Reset results fields
-        if (resultTitle) resultTitle.value = '';
-        if (resultBody) resultBody.value = '';
-        if (resultThreadsMain) resultThreadsMain.value = '';
-        if (resultThreadsReply) resultThreadsReply.value = '';
-
-        if (btnCopyTitle) btnCopyTitle.style.display = 'none';
-        if (btnCopyMarkdown) btnCopyMarkdown.style.display = 'none';
-        if (btnCopyHTML) btnCopyHTML.style.display = 'none';
-        if (btnCopyThreadsMain) btnCopyThreadsMain.style.display = 'none';
-        if (btnCopyThreadsReply) btnCopyThreadsReply.style.display = 'none';
-
+        // Reset status message
         if (statusMessage) statusMessage.style.display = 'none';
+
+        // Retrieve current post data
+        const currentPost = allPosts.find(p => String(p.id) === String(activeViewingPostId));
+        if (currentPost) {
+          // Pre-populate custom link
+          const inputPartnersLink = document.getElementById('coupang-partners-link-input');
+          if (inputPartnersLink) {
+            inputPartnersLink.value = currentPost.coupangPartnersLink || '';
+          }
+          
+          // Pre-populate Blog fields
+          if (resultTitle) resultTitle.value = currentPost.generatedBlogTitle || '';
+          if (resultBody) resultBody.value = currentPost.generatedBlogBody || '';
+          
+          // Pre-populate Threads fields
+          if (resultThreadsMain) resultThreadsMain.value = currentPost.generatedThreadsMain || '';
+          if (resultThreadsReply) resultThreadsReply.value = currentPost.generatedThreadsReply || '';
+
+          // Show/Hide copy buttons based on existing content
+          if (btnCopyTitle) btnCopyTitle.style.display = currentPost.generatedBlogTitle ? 'inline-flex' : 'none';
+          if (btnCopyMarkdown) btnCopyMarkdown.style.display = currentPost.generatedBlogBody ? 'inline-flex' : 'none';
+          if (btnCopyHTML) btnCopyHTML.style.display = currentPost.generatedBlogBody ? 'inline-flex' : 'none';
+          if (btnCopyThreadsMain) btnCopyThreadsMain.style.display = currentPost.generatedThreadsMain ? 'inline-flex' : 'none';
+          if (btnCopyThreadsReply) btnCopyThreadsReply.style.display = currentPost.generatedThreadsReply ? 'inline-flex' : 'none';
+        } else {
+          // Fallback reset
+          if (resultTitle) resultTitle.value = '';
+          if (resultBody) resultBody.value = '';
+          if (resultThreadsMain) resultThreadsMain.value = '';
+          if (resultThreadsReply) resultThreadsReply.value = '';
+
+          if (btnCopyTitle) btnCopyTitle.style.display = 'none';
+          if (btnCopyMarkdown) btnCopyMarkdown.style.display = 'none';
+          if (btnCopyHTML) btnCopyHTML.style.display = 'none';
+          if (btnCopyThreadsMain) btnCopyThreadsMain.style.display = 'none';
+          if (btnCopyThreadsReply) btnCopyThreadsReply.style.display = 'none';
+        }
 
         // Reset tab to default (Blog)
         if (tabBlogMode) tabBlogMode.click();
@@ -338,6 +364,19 @@
           if (btnCopyMarkdown) btnCopyMarkdown.style.display = 'inline-flex';
           if (btnCopyHTML) btnCopyHTML.style.display = 'inline-flex';
 
+          // Save generated content to database/Supabase
+          if (window.CloudflareClient && typeof window.CloudflareClient.updateBoardPost === 'function') {
+            const updated = await window.CloudflareClient.updateBoardPost(activeViewingPostId, {
+              generatedBlogTitle: result.title,
+              generatedBlogBody: result.body,
+              coupangPartnersLink: customLink
+            });
+            if (updated) {
+              const idx = allPosts.findIndex(p => String(p.id) === String(activeViewingPostId));
+              if (idx !== -1) allPosts[idx] = updated;
+            }
+          }
+
           if (statusMessage) {
             statusMessage.textContent = '✅ 원고 작성이 성공적으로 완료되었습니다!';
             statusMessage.style.background = 'rgba(16, 185, 129, 0.1)';
@@ -394,6 +433,19 @@
           // Show copy buttons
           if (btnCopyThreadsMain) btnCopyThreadsMain.style.display = 'inline-flex';
           if (btnCopyThreadsReply) btnCopyThreadsReply.style.display = 'inline-flex';
+
+          // Save generated content to database/Supabase
+          if (window.CloudflareClient && typeof window.CloudflareClient.updateBoardPost === 'function') {
+            const updated = await window.CloudflareClient.updateBoardPost(activeViewingPostId, {
+              generatedThreadsMain: result.main,
+              generatedThreadsReply: result.reply,
+              coupangPartnersLink: customLink
+            });
+            if (updated) {
+              const idx = allPosts.findIndex(p => String(p.id) === String(activeViewingPostId));
+              if (idx !== -1) allPosts[idx] = updated;
+            }
+          }
 
           if (statusMessage) {
             statusMessage.textContent = '✅ 스레드 포스팅 작성 완료!';
