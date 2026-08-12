@@ -253,6 +253,90 @@
       });
     }
 
+    // Helper to populate and show/hide history dropdowns
+    function updateHistoryDropdowns(currentPost) {
+      const blogHistoryContainer = document.getElementById('blog-history-container');
+      const blogHistorySelect = document.getElementById('blog-history-select');
+      const threadsHistoryContainer = document.getElementById('threads-history-container');
+      const threadsHistorySelect = document.getElementById('threads-history-select');
+
+      // Blog History
+      if (blogHistoryContainer && blogHistorySelect) {
+        const history = Array.isArray(currentPost.blogHistory) ? currentPost.blogHistory : [];
+        if (history.length > 0) {
+          blogHistorySelect.innerHTML = `<option value="-1">⏳ 복구할 이전 블로그 원고 선택 (${history.length}개 저장됨)</option>` +
+            history.map((h, idx) => {
+              const styleName = h.style === 'review' ? '정보형' : h.style === 'comparison' ? '비교형' : '스토리형';
+              return `<option value="${idx}">${h.generatedAt} [${styleName}]</option>`;
+            }).join('');
+          blogHistoryContainer.style.display = 'flex';
+        } else {
+          blogHistoryContainer.style.display = 'none';
+        }
+      }
+
+      // Threads History
+      if (threadsHistoryContainer && threadsHistorySelect) {
+        const history = Array.isArray(currentPost.threadsHistory) ? currentPost.threadsHistory : [];
+        if (history.length > 0) {
+          threadsHistorySelect.innerHTML = `<option value="-1">⏳ 복구할 이전 스레드 원고 선택 (${history.length}개 저장됨)</option>` +
+            history.map((h, idx) => {
+              const styleName = h.style === 'hook' ? '후킹형' : h.style === 'tip' ? '정보형' : '수다형';
+              return `<option value="${idx}">${h.generatedAt} [${styleName}]</option>`;
+            }).join('');
+          threadsHistoryContainer.style.display = 'flex';
+        } else {
+          threadsHistoryContainer.style.display = 'none';
+        }
+      }
+    }
+
+    // Bind History selection changes
+    const blogHistorySelect = document.getElementById('blog-history-select');
+    if (blogHistorySelect) {
+      blogHistorySelect.addEventListener('change', (e) => {
+        const idx = parseInt(e.target.value, 10);
+        if (idx < 0) return;
+        const currentPost = allPosts.find(p => String(p.id) === String(activeViewingPostId));
+        if (currentPost && currentPost.blogHistory && currentPost.blogHistory[idx]) {
+          const selected = currentPost.blogHistory[idx];
+          if (resultTitle) resultTitle.value = selected.title || '';
+          if (resultBody) resultBody.value = selected.body || '';
+          if (selectBlogStyle) selectBlogStyle.value = selected.style || 'review';
+          
+          const inputPartnersLink = document.getElementById('coupang-partners-link-input');
+          if (inputPartnersLink) inputPartnersLink.value = selected.link || '';
+
+          // Show copy buttons
+          if (btnCopyTitle) btnCopyTitle.style.display = 'inline-flex';
+          if (btnCopyMarkdown) btnCopyMarkdown.style.display = 'inline-flex';
+          if (btnCopyHTML) btnCopyHTML.style.display = 'inline-flex';
+        }
+      });
+    }
+
+    const threadsHistorySelect = document.getElementById('threads-history-select');
+    if (threadsHistorySelect) {
+      threadsHistorySelect.addEventListener('change', (e) => {
+        const idx = parseInt(e.target.value, 10);
+        if (idx < 0) return;
+        const currentPost = allPosts.find(p => String(p.id) === String(activeViewingPostId));
+        if (currentPost && currentPost.threadsHistory && currentPost.threadsHistory[idx]) {
+          const selected = currentPost.threadsHistory[idx];
+          if (resultThreadsMain) resultThreadsMain.value = selected.main || '';
+          if (resultThreadsReply) resultThreadsReply.value = selected.reply || '';
+          if (selectThreadsStyle) selectThreadsStyle.value = selected.style || 'hook';
+          
+          const inputPartnersLink = document.getElementById('coupang-partners-link-input');
+          if (inputPartnersLink) inputPartnersLink.value = selected.link || '';
+
+          // Show copy buttons
+          if (btnCopyThreadsMain) btnCopyThreadsMain.style.display = 'inline-flex';
+          if (btnCopyThreadsReply) btnCopyThreadsReply.style.display = 'inline-flex';
+        }
+      });
+    }
+
     if (btnCreateBlogModal && modalBlog && modalView) {
       btnCreateBlogModal.addEventListener('click', () => {
         // Hide view modal and show blog modal
@@ -285,6 +369,9 @@
           if (btnCopyHTML) btnCopyHTML.style.display = currentPost.generatedBlogBody ? 'inline-flex' : 'none';
           if (btnCopyThreadsMain) btnCopyThreadsMain.style.display = currentPost.generatedThreadsMain ? 'inline-flex' : 'none';
           if (btnCopyThreadsReply) btnCopyThreadsReply.style.display = currentPost.generatedThreadsReply ? 'inline-flex' : 'none';
+
+          // Update History dropdowns
+          updateHistoryDropdowns(currentPost);
         } else {
           // Fallback reset
           if (resultTitle) resultTitle.value = '';
@@ -297,6 +384,11 @@
           if (btnCopyHTML) btnCopyHTML.style.display = 'none';
           if (btnCopyThreadsMain) btnCopyThreadsMain.style.display = 'none';
           if (btnCopyThreadsReply) btnCopyThreadsReply.style.display = 'none';
+
+          const blogHistoryContainer = document.getElementById('blog-history-container');
+          if (blogHistoryContainer) blogHistoryContainer.style.display = 'none';
+          const threadsHistoryContainer = document.getElementById('threads-history-container');
+          if (threadsHistoryContainer) threadsHistoryContainer.style.display = 'none';
         }
 
         // Reset tab to default (Blog)
@@ -364,16 +456,29 @@
           if (btnCopyMarkdown) btnCopyMarkdown.style.display = 'inline-flex';
           if (btnCopyHTML) btnCopyHTML.style.display = 'inline-flex';
 
+          // Fetch current history array and append new draft to front
+          const blogHistory = Array.isArray(currentPost.blogHistory) ? [...currentPost.blogHistory] : [];
+          blogHistory.unshift({
+            title: result.title,
+            body: result.body,
+            style: style,
+            link: customLink,
+            generatedAt: new Date().toLocaleString('ko-KR')
+          });
+
           // Save generated content to database/Supabase
           if (window.CloudflareClient && typeof window.CloudflareClient.updateBoardPost === 'function') {
             const updated = await window.CloudflareClient.updateBoardPost(activeViewingPostId, {
               generatedBlogTitle: result.title,
               generatedBlogBody: result.body,
+              blogHistory: blogHistory,
               coupangPartnersLink: customLink
             });
             if (updated) {
               const idx = allPosts.findIndex(p => String(p.id) === String(activeViewingPostId));
               if (idx !== -1) allPosts[idx] = updated;
+              // Refresh dropdowns with new history
+              updateHistoryDropdowns(updated);
             }
           }
 
@@ -434,16 +539,29 @@
           if (btnCopyThreadsMain) btnCopyThreadsMain.style.display = 'inline-flex';
           if (btnCopyThreadsReply) btnCopyThreadsReply.style.display = 'inline-flex';
 
+          // Fetch current history array and append new draft to front
+          const threadsHistory = Array.isArray(currentPost.threadsHistory) ? [...currentPost.threadsHistory] : [];
+          threadsHistory.unshift({
+            main: result.main,
+            reply: result.reply,
+            style: style,
+            link: customLink,
+            generatedAt: new Date().toLocaleString('ko-KR')
+          });
+
           // Save generated content to database/Supabase
           if (window.CloudflareClient && typeof window.CloudflareClient.updateBoardPost === 'function') {
             const updated = await window.CloudflareClient.updateBoardPost(activeViewingPostId, {
               generatedThreadsMain: result.main,
               generatedThreadsReply: result.reply,
+              threadsHistory: threadsHistory,
               coupangPartnersLink: customLink
             });
             if (updated) {
               const idx = allPosts.findIndex(p => String(p.id) === String(activeViewingPostId));
               if (idx !== -1) allPosts[idx] = updated;
+              // Refresh dropdowns with new history
+              updateHistoryDropdowns(updated);
             }
           }
 
