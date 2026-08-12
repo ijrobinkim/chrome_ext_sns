@@ -66,12 +66,27 @@
     const priceEl = document.querySelector('.total-price strong') || 
                     document.querySelector('strong.price-value') ||
                     document.querySelector('.price-value') ||
-                    document.querySelector('.prod-sale-price .total-price') ||
-                    document.querySelector('.prod-major-price .total-price') ||
-                    document.querySelector('.prod-price .total-price') ||
-                    document.querySelector('.prod-coupon-price .total-price') ||
+                    document.querySelector('.prod-sale-price') || 
+                    document.querySelector('.prod-coupon-price') ||
+                    document.querySelector('.prod-major-price') ||
+                    document.querySelector('.prod-price') ||
                     document.querySelector('.total-price');
-    const priceText = priceEl ? priceEl.innerText.replace(/\n/g, '').trim() : '';
+    let priceText = priceEl ? priceEl.innerText.replace(/\n/g, '').trim() : '';
+
+    // Regex fallback search if selectors failed
+    if (!priceText) {
+      const buyPanel = document.querySelector('.prod-buy') || document.querySelector('.prod-atf') || document.body;
+      const priceCandidates = buyPanel.querySelectorAll('[class*="price"], [class*="Price"], [class*="total"], [class*="sale"]');
+      for (const cand of priceCandidates) {
+        if (cand.children.length > 2) continue;
+        const text = cand.innerText.replace(/\s+/g, '').trim();
+        const match = text.match(/\d{1,3}(,\d{3})*원/);
+        if (match) {
+          priceText = match[0];
+          break;
+        }
+      }
+    }
 
     // Original Price
     const origPriceEl = document.querySelector('.origin-price') || document.querySelector('.base-price');
@@ -127,6 +142,23 @@
         mainImgUrls.add(cleanImageUrl(src));
       }
     });
+
+    // Fallback image scan in main image section
+    if (mainImgUrls.size === 0) {
+      const imgContainer = document.querySelector('.prod-image-container') || 
+                           document.querySelector('#repImage') ||
+                           document.querySelector('.prod-atf-left') ||
+                           document.querySelector('.prod-image-gallery') ||
+                           document.querySelector('.prod-image');
+      if (imgContainer) {
+        imgContainer.querySelectorAll('img').forEach(img => {
+          const src = getElementImageSrc(img);
+          if (isValidProductImage(src)) {
+            mainImgUrls.add(cleanImageUrl(src));
+          }
+        });
+      }
+    }
 
     // Also check large view main image zoom attributes
     document.querySelectorAll('[data-detail-url], [data-origin-src], [data-zoom-image]').forEach(el => {
