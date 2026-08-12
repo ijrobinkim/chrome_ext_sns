@@ -262,7 +262,10 @@
 
         try {
           const style = selectBlogStyle ? selectBlogStyle.value : 'review';
-          const result = await window.AIBlogClient.generatePost(currentPost, style);
+          const inputPartnersLink = document.getElementById('coupang-partners-link-input');
+          const customLink = inputPartnersLink ? inputPartnersLink.value.trim() : '';
+
+          const result = await window.AIBlogClient.generatePost(currentPost, style, customLink);
           
           if (resultTitle) resultTitle.value = result.title;
           if (resultBody) resultBody.value = result.body;

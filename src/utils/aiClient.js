@@ -48,6 +48,9 @@
 
     // Wrap single list items if any
     
+    // Images formatting (alt to caption)
+    html = html.replace(/!\[(.*?)\]\((.*?)\)/g, '<div style="text-align: center; margin: 20px 0;"><img src="$2" alt="$1" style="max-width: 90%; height: auto; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);"><p style="font-size: 12px; color: #6b7280; margin-top: 6px; font-style: italic;">▲ $1</p></div>');
+
     // Links (Affiliate Links formatting)
     html = html.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" style="color: #2563eb; font-weight: 700; text-decoration: underline;">$1</a>');
     
@@ -61,7 +64,7 @@
   /**
    * Call Google Gemini API to generate the post content
    */
-  async function generatePost(productData, style = 'review') {
+  async function generatePost(productData, style = 'review', customLink = '') {
     const key = getGeminiKey();
     if (!key) {
       throw new Error('Gemini API Key가 설정되지 않았습니다. 상단 입력창에 등록해 주세요.');
@@ -73,6 +76,23 @@
     const optionDescriptions = productData.options && productData.options.length > 0
       ? productData.options.join(', ')
       : '없음';
+
+    const affiliateLink = customLink.trim() || productData.link || '#';
+    const imageUrls = productData.images && productData.images.length > 0
+      ? productData.images.slice(0, 5) // Use up to 5 main images
+      : [];
+
+    let imageInstruction = '';
+    if (imageUrls.length > 0) {
+      imageInstruction = `
+[이미지 삽입 지침]
+다음은 수집된 상품 이미지 URL 목록입니다:
+${imageUrls.map((url, idx) => `- 이미지 ${idx + 1}: ${url}`).join('\n')}
+
+원고 중간중간 (서론 공감대 형성 이후, 스펙 비교 분석 중간, 실사용 후기 소개 시점 등) 문맥이 끝나는 문단 사이에 총 2~3회에 걸쳐 이미지 마크다운 \`![이미지 설명](이미지 URL)\`을 골고루 분산시켜 삽입해 주세요. 
+단, 이미지 설명(alt text)은 검색 노출에 도움되도록 해당 이미지에 어울리는 풍부한 한국어 설명으로 적어주세요. 반드시 제공된 실제 URL만 정확히 사용해야 하며 가짜 URL을 생성하지 마세요.
+`;
+    }
 
     const systemPrompt = `
 당신은 10년 차 전업 제휴 마케팅 블로거이자 고전환 카피라이팅 전문가입니다.
@@ -92,8 +112,11 @@
 [필수 요구사항]
 1. 공정위 문구 위치 규정: 본문 맨 하단에 다음 공정위 문구를 토씨 하나 틀리지 말고 정확하게 포함하세요:
 "이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다."
-2. 링크 유도: 상품 원본 링크(${productData.link || '#'})를 문맥에 맞게 매끄러운 텍스트 링크로 본문에 1~2회 삽입해 주세요. (예: "자세한 스펙이나 현재 특가 확인은 [여기 상품 정보 확인]을 통해 보실 수 있어요.")
+2. 링크 삽입 지침: 
+- **본문 중간 부분**: 본문 중간 흐름에 자연스럽게 1~2회 마크다운 링크 형식으로 제휴 링크(${affiliateLink})를 배치해 주세요. (예: "더 자세한 상품 정보나 후기들은 [이곳 상품 페이지 정보]에서 보실 수 있어요.")
+- **본문 맨 마지막 부분**: 원고 맨 마지막 문단 바로 아래에 강조 형태로 제휴 링크(${affiliateLink})를 한 번 더 삽입해 마무리하세요. (예: "[▶ 상품 상세 정보 및 구매 링크 보러가기](링크)")
 3. 단점 언급: 완벽한 제품은 없습니다. 실사용 시 겪을 수 있는 사소한 아쉬움 1가지를 언급하여 무한한 신뢰도를 이끌어내세요.
+${imageInstruction}
 `;
 
     const userPrompt = `
