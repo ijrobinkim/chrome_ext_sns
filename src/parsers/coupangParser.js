@@ -64,10 +64,13 @@
 
     // 2. Price
     const priceEl = document.querySelector('.total-price strong') || 
+                    document.querySelector('strong.price-value') ||
+                    document.querySelector('.price-value') ||
                     document.querySelector('.prod-sale-price .total-price') ||
                     document.querySelector('.prod-major-price .total-price') ||
                     document.querySelector('.prod-price .total-price') ||
-                    document.querySelector('.prod-coupon-price .total-price');
+                    document.querySelector('.prod-coupon-price .total-price') ||
+                    document.querySelector('.total-price');
     const priceText = priceEl ? priceEl.innerText.replace(/\n/g, '').trim() : '';
 
     // Original Price
@@ -108,6 +111,8 @@
 
     // Query main image containers
     const mainSelectors = [
+      '.prod-image__detail',
+      'img.prod-image__detail',
       '.prod-image__items img',
       '.prod-image img',
       'ul.prod-image__items li img',
@@ -185,10 +190,15 @@
 
     // 8. Options
     const options = [];
-    const optionNodes = document.querySelectorAll('.prod-option__item, .prod-option__selected, .prod-option-dropdown span, .prod-option__item span');
+    const optionNodes = document.querySelectorAll(
+      '.prod-option__item, .prod-option__selected, .prod-option-dropdown span, ' +
+      '.prod-option__item span, select option, .prod-option__dropdown-item-title, ' +
+      '.prod-option__dropdown-item, [class*="option"] span, [class*="option"] div'
+    );
     optionNodes.forEach(opt => {
       const txt = opt.innerText.trim();
-      if (txt && !options.includes(txt)) {
+      // Only keep short, descriptive texts (exclude large blocks)
+      if (txt && txt.length < 50 && !options.includes(txt)) {
         options.push(txt);
       }
     });

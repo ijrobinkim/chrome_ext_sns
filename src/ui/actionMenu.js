@@ -224,7 +224,12 @@
 
   function openShoppingActionModal(card, productData) {
     // Dynamic real-time rescan for freshest DOM images & metadata
-    if (global.CoupangParser && typeof global.CoupangParser.parseProductDetailPage === 'function') {
+    if (productData.platform === 'naver' && global.NaverParser && typeof global.NaverParser.parseProductDetailPage === 'function') {
+      const freshData = global.NaverParser.parseProductDetailPage();
+      if (freshData) {
+        productData = Object.assign({}, productData, freshData);
+      }
+    } else if (global.CoupangParser && typeof global.CoupangParser.parseProductDetailPage === 'function') {
       const freshData = global.CoupangParser.parseProductDetailPage();
       if (freshData) {
         productData = Object.assign({}, productData, freshData);
