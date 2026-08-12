@@ -553,20 +553,23 @@
   }
 
   function openViewModal(post) {
-    activeViewingPostId = post.id;
+    // Look up the freshest post reference from allPosts by ID to bypass stale render closures
+    const latestPost = allPosts.find(p => String(p.id) === String(post.id)) || post;
+    activeViewingPostId = latestPost.id;
+    
     const modalView = document.getElementById('modal-view-post');
     if (!modalView) return;
 
-    document.getElementById('view-post-category').textContent = post.categoryLabel || post.category;
-    document.getElementById('view-post-title').textContent = post.title || '제목 없음';
-    document.getElementById('view-post-author').textContent = post.author || '익명';
-    document.getElementById('view-post-date').textContent = post.createdAt || '';
-    document.getElementById('view-post-content').textContent = post.content || '';
+    document.getElementById('view-post-category').textContent = latestPost.categoryLabel || latestPost.category;
+    document.getElementById('view-post-title').textContent = latestPost.title || '제목 없음';
+    document.getElementById('view-post-author').textContent = latestPost.author || '익명';
+    document.getElementById('view-post-date').textContent = latestPost.createdAt || '';
+    document.getElementById('view-post-content').textContent = latestPost.content || '';
 
     const linkEl = document.getElementById('view-post-link');
     if (linkEl) {
-      if (post.link && post.link !== '#') {
-        linkEl.href = post.link;
+      if (latestPost.link && latestPost.link !== '#') {
+        linkEl.href = latestPost.link;
         linkEl.style.display = 'inline-block';
       } else {
         linkEl.style.display = 'none';
@@ -587,8 +590,8 @@
       contentEl.parentNode.insertBefore(priceSection, contentEl);
     }
 
-    if (post.price && post.price !== '-') {
-      priceSection.textContent = `판매가: ${post.price}`;
+    if (latestPost.price && latestPost.price !== '-') {
+      priceSection.textContent = `판매가: ${latestPost.price}`;
       priceSection.style.display = 'block';
     } else {
       priceSection.style.display = 'none';
@@ -611,8 +614,8 @@
       imgsEl.parentNode.insertBefore(optionsSection, imgsEl);
     }
 
-    if (post.options && post.options.length > 0) {
-      optionsSection.innerHTML = `<b>선택 옵션:</b><br>${post.options.join(', ')}`;
+    if (latestPost.options && latestPost.options.length > 0) {
+      optionsSection.innerHTML = `<b>선택 옵션:</b><br>${latestPost.options.join(', ')}`;
       optionsSection.style.display = 'block';
     } else {
       optionsSection.style.display = 'none';
@@ -622,8 +625,8 @@
     const imgsContainer = document.getElementById('view-post-images');
     if (imgsContainer) {
       imgsContainer.innerHTML = '';
-      if (post.images && post.images.length > 0) {
-        post.images.forEach(src => {
+      if (latestPost.images && latestPost.images.length > 0) {
+        latestPost.images.forEach(src => {
           const img = document.createElement('img');
           img.src = src;
           img.style.width = '120px';
