@@ -54,6 +54,7 @@
         "src/parsers/instagramParser.js",
         "src/parsers/xiaohongshuParser.js",
         "src/parsers/coupangParser.js",
+        "src/parsers/naverParser.js",
         "src/content.js"
       ],
       "css": [
@@ -74,7 +75,8 @@
         "src/dashboard.js",
         "src/utils/formatter.js",
         "src/utils/calculator.js",
-        "src/utils/exporter.js"
+        "src/utils/exporter.js",
+        "src/parsers/naverParser.js"
       ],
       "matches": [
         "https://threads.com/*",
