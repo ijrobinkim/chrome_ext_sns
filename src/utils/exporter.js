@@ -103,9 +103,27 @@
       return;
     }
 
+    let textValue = cardData.text || '';
+    if (cardData.isShopping) {
+      try {
+        textValue = JSON.stringify({
+          isShopping: true,
+          platform: cardData.platform || 'coupang',
+          title: cardData.title || '',
+          price: cardData.price || '',
+          seller: cardData.author || 'unknown',
+          images: cardData.images || [],
+          options: cardData.options || [],
+          content: cardData.text || ''
+        });
+      } catch (e) {
+        console.warn('JSON stringify error on shopping cardData:', e);
+      }
+    }
+
     const item = {
       author: cardData.author || 'unknown',
-      text: cardData.text || '',
+      text: textValue,
       link: cardData.link || window.location.href,
       views: cardData.metrics?.views || 0,
       likes: cardData.metrics?.likes || 0,

@@ -97,22 +97,70 @@
           .order('saved_at', { ascending: false });
 
         if (!error && data && data.length > 0) {
-          const remotePosts = data.map((item, idx) => ({
-            id: item.id || `sp_${idx}`,
-            category: item.text && item.text.includes('쿠팡') ? 'shopping' : 'sns',
-            categoryLabel: item.text && item.text.includes('쿠팡') ? '🛒 쿠팡' : '📢 스레드',
-            title: item.text ? item.text.substring(0, 50) : '수집된 콘텐츠',
-            author: item.author || '익명',
-            content: item.text || '',
-            price: item.price || '-',
-            link: item.link || window.location.href,
-            images: item.images || [],
-            views: item.views || 0,
-            likes: item.likes || 0,
-            comments: item.comments || 0,
-            status: 'published',
-            createdAt: item.saved_at ? new Date(item.saved_at).toLocaleString('ko-KR') : new Date().toLocaleString('ko-KR')
-          }));
+          const remotePosts = data.map((item, idx) => {
+            let category = 'sns';
+            let categoryLabel = '📢 스레드';
+            let title = '수집된 콘텐츠';
+            let content = item.text || '';
+            let price = '-';
+            let images = [];
+            let options = [];
+
+            // Detect if item.text is JSON-serialized shopping metadata
+            if (content.trim().startsWith('{') && content.trim().endsWith('}')) {
+              try {
+                const parsed = JSON.parse(content);
+                if (parsed.isShopping) {
+                  category = 'shopping';
+                  categoryLabel = parsed.platform === 'naver' ? '🛒 네이버 쇼핑' : '🛒 쿠팡';
+                  title = parsed.title || title;
+                  price = parsed.price || '-';
+                  images = parsed.images || [];
+                  options = parsed.options || [];
+                  content = parsed.content || `[${title}] 가격: ${price} / 판매자: ${parsed.seller || '-'}`;
+                }
+              } catch (e) {
+                console.warn('JSON parse error on post text:', e);
+              }
+            } else {
+              // Fallback text parsing
+              if (content.includes('쿠팡') || content.includes('Coupang')) {
+                category = 'shopping';
+                categoryLabel = '🛒 쿠팡';
+              } else if (content.includes('네이버') || content.includes('Naver') || content.includes('스마트스토어')) {
+                category = 'shopping';
+                categoryLabel = '🛒 네이버 쇼핑';
+              }
+              title = content.substring(0, 50);
+            }
+
+            // Direct columns check (if they exist)
+            if (item.price) price = item.price;
+            if (item.images) {
+              if (Array.isArray(item.images)) images = item.images;
+              else if (typeof item.images === 'string') {
+                try { images = JSON.parse(item.images); } catch(e) { images = [item.images]; }
+              }
+            }
+
+            return {
+              id: item.id || `sp_${idx}`,
+              category,
+              categoryLabel,
+              title,
+              author: item.author || '익명',
+              content,
+              price,
+              link: item.link || window.location.href,
+              images,
+              options,
+              views: item.views || 0,
+              likes: item.likes || 0,
+              comments: item.comments || 0,
+              status: 'published',
+              createdAt: item.saved_at ? new Date(item.saved_at).toLocaleString('ko-KR') : new Date().toLocaleString('ko-KR')
+            };
+          });
 
           // Merge local posts with remote posts (avoid duplicates by id)
           const postMap = new Map();
@@ -157,9 +205,22 @@
     // Also push to Supabase if connected
     if (global.supabaseClient) {
       try {
+        let textValue = `[${newPost.title}] ${newPost.content}`;
+        if (newPost.category === 'shopping') {
+          textValue = JSON.stringify({
+            isShopping: true,
+            platform: 'coupang',
+            title: newPost.title,
+            price: newPost.price || '-',
+            seller: newPost.author,
+            images: newPost.images || [],
+            options: [],
+            content: newPost.content
+          });
+        }
         await global.supabaseClient.from('sns_metrics').insert([{
           author: newPost.author,
-          text: `[${newPost.title}] ${newPost.content}`,
+          text: textValue,
           link: newPost.link,
           views: 0,
           likes: 0,

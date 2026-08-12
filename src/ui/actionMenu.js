@@ -305,8 +305,16 @@
 
     const collectBtn = createModalButton('☁️ 수집함에 저장', 'btn-gradient btn-half', async () => {
       const dashboardUrl = safeGetURL('collected.html');
+      const isNaver = productData.platform === 'naver';
+      const defaultAuthor = isNaver ? 'Naver' : 'Coupang';
       const cardData = {
-        author: productData.seller || 'Coupang',
+        author: productData.seller || defaultAuthor,
+        platform: productData.platform || 'coupang',
+        title: productData.title || '',
+        price: productData.price || '',
+        images: productData.mainImages || [],
+        options: productData.options || [],
+        isShopping: true,
         text: `[${productData.title}] ${productData.price} (${productData.seller})`,
         link: productData.url || window.location.href,
         metrics: {
@@ -321,7 +329,7 @@
       if (global.SNSExporter && global.SNSExporter.saveToSupabase) {
         await global.SNSExporter.saveToSupabase(cardData);
       }
-      global.SNSExporter.showToast('✅ 쿠팡 상품이 수집함에 저장되었습니다!');
+      global.SNSExporter.showToast(`✅ ${isNaver ? '네이버 쇼핑' : '쿠팡'} 상품이 수집함에 저장되었습니다!`);
       window.open(dashboardUrl, '_blank');
     });
 

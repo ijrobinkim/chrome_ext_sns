@@ -222,6 +222,51 @@
       }
     }
 
+    // Dynamic Price Section
+    let priceSection = document.getElementById('view-post-price-section');
+    if (!priceSection) {
+      priceSection = document.createElement('div');
+      priceSection.id = 'view-post-price-section';
+      priceSection.style.fontSize = '20px';
+      priceSection.style.fontWeight = '800';
+      priceSection.style.color = '#f97316';
+      priceSection.style.marginBottom = '12px';
+      
+      const contentEl = document.getElementById('view-post-content');
+      contentEl.parentNode.insertBefore(priceSection, contentEl);
+    }
+
+    if (post.price && post.price !== '-') {
+      priceSection.textContent = `판매가: ${post.price}`;
+      priceSection.style.display = 'block';
+    } else {
+      priceSection.style.display = 'none';
+    }
+
+    // Dynamic Options Section
+    let optionsSection = document.getElementById('view-post-options-section');
+    if (!optionsSection) {
+      optionsSection = document.createElement('div');
+      optionsSection.id = 'view-post-options-section';
+      optionsSection.style.fontSize = '12px';
+      optionsSection.style.color = '#a5b4fc';
+      optionsSection.style.background = '#1e1e2f';
+      optionsSection.style.border = '1px solid #31324f';
+      optionsSection.style.padding = '10px 14px';
+      optionsSection.style.borderRadius = '8px';
+      optionsSection.style.marginBottom = '12px';
+      
+      const imgsEl = document.getElementById('view-post-images');
+      imgsEl.parentNode.insertBefore(optionsSection, imgsEl);
+    }
+
+    if (post.options && post.options.length > 0) {
+      optionsSection.innerHTML = `<b>선택 옵션:</b><br>${post.options.join(', ')}`;
+      optionsSection.style.display = 'block';
+    } else {
+      optionsSection.style.display = 'none';
+    }
+
     // Images
     const imgsContainer = document.getElementById('view-post-images');
     if (imgsContainer) {
@@ -230,11 +275,16 @@
         post.images.forEach(src => {
           const img = document.createElement('img');
           img.src = src;
-          img.style.width = '100px';
-          img.style.height = '100px';
+          img.style.width = '120px';
+          img.style.height = '120px';
           img.style.objectFit = 'cover';
           img.style.borderRadius = '8px';
           img.style.border = '1px solid #313244';
+          img.style.cursor = 'zoom-in';
+          img.title = '클릭하여 원본 보기';
+          img.addEventListener('click', () => {
+            window.open(src, '_blank');
+          });
           imgsContainer.appendChild(img);
         });
       }
@@ -273,12 +323,23 @@
           tr.style.cursor = 'pointer';
           tr.addEventListener('click', () => openViewModal(post));
 
+          const hasThumbnail = post.images && post.images.length > 0;
+          const firstImg = hasThumbnail ? post.images[0] : '';
+
           tr.innerHTML = `
             <td><input type="checkbox"></td>
             <td style="color: #94a3b8;">${idx + 1}</td>
             <td>
-              <div style="font-weight: 700; color: #f8fafc;">${escapeHtml(post.title)}</div>
-              <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">by ${escapeHtml(post.author)}</div>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                ${hasThumbnail ? `<img src="${firstImg}" style="width: 32px; height: 32px; object-fit: cover; border-radius: 6px; border: 1px solid #313244; flex-shrink: 0;">` : ''}
+                <div style="overflow: hidden; text-overflow: ellipsis;">
+                  <div style="font-weight: 700; color: #f8fafc; font-size: 14px;">${escapeHtml(post.title)}</div>
+                  <div style="font-size: 11px; color: #94a3b8; margin-top: 3px; display: flex; gap: 12px;">
+                    <span>by ${escapeHtml(post.author)}</span>
+                    ${post.price && post.price !== '-' ? `<span style="color: #f97316; font-weight: 700;">🏷️ ${escapeHtml(post.price)}</span>` : ''}
+                  </div>
+                </div>
+              </div>
             </td>
             <td>
               <span class="status-badge" style="background: rgba(124, 58, 237, 0.2); color: #c4b5fd; border: 1px solid rgba(124, 58, 237, 0.4);">
@@ -332,10 +393,11 @@
           const firstImg = (post.images && post.images.length > 0) ? post.images[0] : null;
 
           card.innerHTML = `
-            ${firstImg ? `<img src="${firstImg}" style="width:100%; height:140px; object-fit:cover; border-radius:10px; margin-bottom:12px;">` : ''}
+            ${firstImg ? `<img src="${firstImg}" style="width:100%; height:160px; object-fit:cover; border-radius:12px; margin-bottom:12px; border: 1px solid #2e2e3e;">` : ''}
             <div style="font-size: 11px; color: #a5b4fc; font-weight: 700; margin-bottom: 6px;">${escapeHtml(post.categoryLabel || post.category)}</div>
-            <div style="font-size: 15px; font-weight: 800; color: #fff; margin-bottom: 8px; line-height: 1.3;">${escapeHtml(post.title)}</div>
-            <div style="font-size: 13px; color: #cbd5e1; margin-bottom: 12px; height: 38px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${escapeHtml(post.content)}</div>
+            <div style="font-size: 15px; font-weight: 800; color: #fff; margin-bottom: 6px; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(post.title)}</div>
+            ${post.price && post.price !== '-' ? `<div style="font-size: 16px; font-weight: 800; color: #f97316; margin-bottom: 8px;">${escapeHtml(post.price)}</div>` : ''}
+            <div style="font-size: 13px; color: #cbd5e1; margin-bottom: 12px; height: 38px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.4;">${escapeHtml(post.content)}</div>
             <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #94a3b8; border-top: 1px solid #282838; padding-top: 10px;">
               <span>by ${escapeHtml(post.author)}</span>
               <span>❤️ ${post.likes || 0}</span>
