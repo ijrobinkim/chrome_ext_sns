@@ -171,6 +171,165 @@
       }
     });
 
+    // --- Blog Post Generation Modal Handling ---
+    const btnCreateBlogModal = document.getElementById('btn-create-blog-modal');
+    const modalBlog = document.getElementById('modal-blog-generation');
+    const btnCloseBlog = document.getElementById('btn-close-blog');
+    const inputApiKey = document.getElementById('gemini-api-key-input');
+    const btnSaveApiKey = document.getElementById('btn-save-api-key');
+    const btnGenerateBlogRun = document.getElementById('btn-generate-blog-run');
+    const selectBlogStyle = document.getElementById('blog-style-select');
+    const statusMessage = document.getElementById('blog-status-message');
+    const resultTitle = document.getElementById('blog-result-title');
+    const resultBody = document.getElementById('blog-result-body');
+    const btnCopyTitle = document.getElementById('btn-copy-blog-title');
+    const btnCopyMarkdown = document.getElementById('btn-copy-blog-markdown');
+    const btnCopyHTML = document.getElementById('btn-copy-blog-html');
+
+    // Load saved API Key on start
+    if (inputApiKey && window.AIBlogClient) {
+      inputApiKey.value = window.AIBlogClient.getGeminiKey();
+    }
+
+    if (btnSaveApiKey && inputApiKey && window.AIBlogClient) {
+      btnSaveApiKey.addEventListener('click', () => {
+        const key = inputApiKey.value.trim();
+        window.AIBlogClient.saveGeminiKey(key);
+        alert('🔑 API 키가 안전하게 로컬 브라우저(localStorage)에 저장되었습니다!');
+      });
+    }
+
+    if (btnCreateBlogModal && modalBlog && modalView) {
+      btnCreateBlogModal.addEventListener('click', () => {
+        // Hide view modal and show blog modal
+        modalView.style.display = 'none';
+        modalBlog.style.display = 'flex';
+        
+        // Reset results fields
+        if (resultTitle) resultTitle.value = '';
+        if (resultBody) resultBody.value = '';
+        if (btnCopyTitle) btnCopyTitle.style.display = 'none';
+        if (btnCopyMarkdown) btnCopyMarkdown.style.display = 'none';
+        if (btnCopyHTML) btnCopyHTML.style.display = 'none';
+        if (statusMessage) statusMessage.style.display = 'none';
+      });
+    }
+
+    if (btnCloseBlog && modalBlog) {
+      btnCloseBlog.addEventListener('click', () => {
+        modalBlog.style.display = 'none';
+        // Return to view modal
+        if (modalView) modalView.style.display = 'flex';
+      });
+    }
+
+    // Modal background close for Blog Modal
+    if (modalBlog) {
+      modalBlog.addEventListener('click', (e) => {
+        if (e.target === modalBlog) {
+          modalBlog.style.display = 'none';
+          if (modalView) modalView.style.display = 'flex';
+        }
+      });
+    }
+
+    // Run Generator
+    if (btnGenerateBlogRun && window.AIBlogClient) {
+      btnGenerateBlogRun.addEventListener('click', async () => {
+        if (!activeViewingPostId) return;
+        const currentPost = allPosts.find(p => String(p.id) === String(activeViewingPostId));
+        if (!currentPost) {
+          alert('상품 정보 데이터를 찾을 수 없습니다.');
+          return;
+        }
+
+        const apiKey = window.AIBlogClient.getGeminiKey();
+        if (!apiKey) {
+          alert('⚠️ Google Gemini API Key를 먼저 입력하고 저장해 주세요!');
+          if (inputApiKey) inputApiKey.focus();
+          return;
+        }
+
+        // Show status
+        if (statusMessage) {
+          statusMessage.style.background = 'rgba(59, 130, 246, 0.1)';
+          statusMessage.style.border = '1px solid rgba(59, 130, 246, 0.3)';
+          statusMessage.style.color = '#93c5fd';
+          statusMessage.textContent = '🤖 AI 분석 및 원고 작성을 진행 중입니다... (약 5~10초 소요)';
+          statusMessage.style.display = 'block';
+        }
+        if (btnGenerateBlogRun) btnGenerateBlogRun.disabled = true;
+
+        try {
+          const style = selectBlogStyle ? selectBlogStyle.value : 'review';
+          const result = await window.AIBlogClient.generatePost(currentPost, style);
+          
+          if (resultTitle) resultTitle.value = result.title;
+          if (resultBody) resultBody.value = result.body;
+
+          // Show copy buttons
+          if (btnCopyTitle) btnCopyTitle.style.display = 'inline-flex';
+          if (btnCopyMarkdown) btnCopyMarkdown.style.display = 'inline-flex';
+          if (btnCopyHTML) btnCopyHTML.style.display = 'inline-flex';
+
+          if (statusMessage) {
+            statusMessage.textContent = '✅ 원고 작성이 성공적으로 완료되었습니다!';
+            statusMessage.style.background = 'rgba(16, 185, 129, 0.1)';
+            statusMessage.style.border = '1px solid rgba(16, 185, 129, 0.3)';
+            statusMessage.style.color = '#34d399';
+          }
+        } catch (err) {
+          console.error(err);
+          alert(err.message);
+          if (statusMessage) statusMessage.style.display = 'none';
+        } finally {
+          if (btnGenerateBlogRun) btnGenerateBlogRun.disabled = false;
+        }
+      });
+    }
+
+    // Copy Handlers
+    if (btnCopyTitle && resultTitle) {
+      btnCopyTitle.addEventListener('click', () => {
+        navigator.clipboard.writeText(resultTitle.value).then(() => {
+          alert('📋 블로그 제목이 클립보드에 복사되었습니다!');
+        });
+      });
+    }
+
+    if (btnCopyMarkdown && resultBody) {
+      btnCopyMarkdown.addEventListener('click', () => {
+        navigator.clipboard.writeText(resultBody.value).then(() => {
+          alert('📋 마크다운 포맷 본문이 클립보드에 복사되었습니다!');
+        });
+      });
+    }
+
+    if (btnCopyHTML && resultBody && resultTitle && window.AIBlogClient) {
+      btnCopyHTML.addEventListener('click', () => {
+        const mdText = resultBody.value;
+        const htmlText = window.AIBlogClient.mdToHtml(mdText);
+        
+        // Rich Text copy
+        const blobHTML = new Blob([htmlText], { type: 'text/html' });
+        const blobText = new Blob([mdText], { type: 'text/plain' });
+        const data = [new ClipboardItem({
+          'text/html': blobHTML,
+          'text/plain': blobText
+        })];
+
+        navigator.clipboard.write(data).then(() => {
+          alert('✨ 서식이 유지된 본문이 복사되었습니다!\n블로그 에디터(네이버, 티스토리 등) 본문 영역에 Ctrl+V로 붙여넣기 하세요.');
+        }).catch(err => {
+          console.error(err);
+          // Fallback to text copy
+          navigator.clipboard.writeText(mdText).then(() => {
+            alert('📋 마크다운 텍스트 복사로 대체되었습니다.');
+          });
+        });
+      });
+    }
+
     // Action Collect Btn
     const btnCollect = document.getElementById('btn-goto-collect');
     if (btnCollect) {
