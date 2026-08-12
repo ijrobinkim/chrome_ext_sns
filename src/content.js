@@ -28,6 +28,9 @@
     if (host.includes('xiaohongshu.com') || host.includes('xhslink.com')) {
       return global.XiaohongshuParser;
     }
+    if (host.includes('coupang.com') || host.includes('smartstore.naver.com')) {
+      return global.CoupangParser;
+    }
     return null;
   }
 

@@ -16,7 +16,11 @@
     "https://instagram.com/*",
     "https://*.instagram.com/*",
     "https://xiaohongshu.com/*",
-    "https://*.xiaohongshu.com/*"
+    "https://*.xiaohongshu.com/*",
+    "https://coupang.com/*",
+    "https://*.coupang.com/*",
+    "https://smartstore.naver.com/*",
+    "https://*.smartstore.naver.com/*"
   ],
   "content_scripts": [
     {
@@ -30,11 +34,16 @@
         "https://instagram.com/*",
         "https://*.instagram.com/*",
         "https://xiaohongshu.com/*",
-        "https://*.xiaohongshu.com/*"
+        "https://*.xiaohongshu.com/*",
+        "https://coupang.com/*",
+        "https://*.coupang.com/*",
+        "https://smartstore.naver.com/*",
+        "https://*.smartstore.naver.com/*"
       ],
       "js": [
         "src/lib/supabase.min.js",
         "src/utils/supabaseClient.js",
+        "src/utils/cloudflareClient.js",
         "src/utils/formatter.js",
         "src/utils/calculator.js",
         "src/utils/exporter.js",
@@ -44,6 +53,7 @@
         "src/parsers/youtubeParser.js",
         "src/parsers/instagramParser.js",
         "src/parsers/xiaohongshuParser.js",
+        "src/parsers/coupangParser.js",
         "src/content.js"
       ],
       "css": [
@@ -57,6 +67,7 @@
       "resources": [
         "src/lib/supabase.min.js",
         "src/utils/supabaseClient.js",
+        "src/utils/cloudflareClient.js",
         "collected.html",
         "styles/dashboard.css",
         "styles/content.css",
@@ -75,7 +86,11 @@
         "https://instagram.com/*",
         "https://*.instagram.com/*",
         "https://xiaohongshu.com/*",
-        "https://*.xiaohongshu.com/*"
+        "https://*.xiaohongshu.com/*",
+        "https://coupang.com/*",
+        "https://*.coupang.com/*",
+        "https://smartstore.naver.com/*",
+        "https://*.smartstore.naver.com/*"
       ]
     }
   ],

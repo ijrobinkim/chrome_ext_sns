@@ -145,6 +145,25 @@
       </div>
     </div>
 
+    <!-- Coupang Demo Product Card -->
+    <div style="margin-top: 50px;">
+      <h2 style="font-size: 18px; color: #f43f5e; margin-bottom: 12px;">🛒 쿠팡 상품 하드디스크 저장 데모</h2>
+      <div id="coupang-demo-card" style="background: #1e1e2e; border: 1px solid #313244; border-radius: 16px; padding: 20px; position: relative;">
+        <div style="display: flex; gap: 16px; align-items: center;">
+          <img src="https://thumbnail10.coupangcdn.com/thumbnails/remote/492x492ex/image/vendor_inventory/images/2023/10/01/12/3/sample.jpg" onerror="this.src='https://via.placeholder.com/100?text=Coupang+Item'" style="width: 90px; height: 90px; border-radius: 8px; object-fit: cover;">
+          <div style="flex: 1;">
+            <div class="prod-buy-header__title" style="font-weight: 700; font-size: 15px; color: #fff; margin-bottom: 6px;">[쿠팡] 초고속 게이밍 무선 마우스 RGB LED 10000DPI (로켓배송)</div>
+            <div style="font-size: 14px; color: #f43f5e; font-weight: 800; margin-bottom: 4px;">
+              <span class="total-price"><strong>29,900</strong>원</span>
+              <span class="origin-price" style="font-size: 12px; color: #888; text-decoration: line-through; margin-left: 6px;">49,000원</span>
+              <span class="discount-rate" style="font-size: 12px; color: #10b981; margin-left: 6px;">38%↓</span>
+            </div>
+            <div style="font-size: 12px; color: #94a3b8;">⭐ <span class="rating-star-num">4.8</span> (<span class="count">리뷰 1,420개</span>) · <span class="prod-delivery-badge">로켓배송</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <script src="src/utils/formatter.js"></script>
@@ -152,11 +171,11 @@
   <script src="src/utils/exporter.js"></script>
   <script src="src/ui/badgeRenderer.js"></script>
   <script src="src/ui/actionMenu.js"></script>
+  <script src="src/parsers/coupangParser.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const card = document.getElementById('threads-demo-card');
       
-      // Calculate Photo 1 matching metrics: 9.8x performance, 4,481 views, 457 followers, 0.6% eng, 232/hr, 2.5 diff
       const metrics = SNSCalculator.calculateMetrics({
         views: 4481,
         followers: 457,
@@ -167,10 +186,8 @@
         timeElapsed: 19
       });
 
-      // 1. Render Left Vertical Badges (Photo 1)
       SNSBadgeRenderer.renderMetricsOverlay(card, metrics, { mode: 'float' });
 
-      // 2. Render Right Chick Action Button 🐥 (Photo 1 & Photo 2 Modal Trigger)
       const cardData = {
         author: 'daaaa.heeee',
         text: '와... 이거 진짜 신세계다ㄷㄷ 길이 조절로 설치할 수 있는 커튼 발견함;; 이사갈 땐 떼가야징 ㅋㅋㅋㅋ',
@@ -180,6 +197,36 @@
       };
       const chickBtn = SNSActionMenu.createActionButton(card, cardData);
       card.appendChild(chickBtn);
+
+      // 2. Coupang Demo Card Action Menu Trigger
+      const coupangCard = document.getElementById('coupang-demo-card');
+      const coupangData = {
+        isShopping: true,
+        platform: 'coupang',
+        title: '[쿠팡] 초고속 게이밍 무선 마우스 RGB LED 10000DPI (로켓배송)',
+        price: '29,900원',
+        originalPrice: '49,000원',
+        discountRate: '38%',
+        rating: '4.8',
+        reviewCount: 1420,
+        seller: '쿠팡 직매입 (로켓배송)',
+        productId: '789123456',
+        mainImages: [
+          'https://thumbnail10.coupangcdn.com/thumbnails/remote/1000x1000ex/image/vendor_inventory/images/2023/10/01/12/3/sample_main1.jpg',
+          'https://thumbnail10.coupangcdn.com/thumbnails/remote/1000x1000ex/image/vendor_inventory/images/2023/10/01/12/3/sample_main2.jpg'
+        ],
+        detailImages: [
+          'https://thumbnail10.coupangcdn.com/thumbnails/remote/1000x1000ex/image/vendor_inventory/images/2023/10/01/12/3/sample_detail1.jpg'
+        ],
+        options: ['블랙 (RGB)', '화이트 (RGB)', '무소음 블랙'],
+        url: 'https://www.coupang.com/vp/products/789123456',
+        fetchedAt: new Date().toISOString()
+      };
+      const coupangBtn = SNSActionMenu.createActionButton(coupangCard, coupangData);
+      coupangBtn.style.position = 'absolute';
+      coupangBtn.style.top = '16px';
+      coupangBtn.style.right = '16px';
+      coupangCard.appendChild(coupangBtn);
     });
   </script>
 </body>

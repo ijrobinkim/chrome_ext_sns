@@ -34,6 +34,11 @@
     const existing = document.getElementById('sns-action-modal-overlay');
     if (existing) existing.remove();
 
+    if (cardData && cardData.isShopping) {
+      openShoppingActionModal(card, cardData);
+      return;
+    }
+
     const overlay = document.createElement('div');
     overlay.id = 'sns-action-modal-overlay';
     overlay.className = 'sns-modal-overlay';
@@ -217,9 +222,132 @@
     global.SNSExporter.showToast(`📊 ${commentCount}개 댓글 데이터 내보내기 완료!`);
   }
 
+  function openShoppingActionModal(card, productData) {
+    // Dynamic real-time rescan for freshest DOM images & metadata
+    if (global.CoupangParser && typeof global.CoupangParser.parseProductDetailPage === 'function') {
+      const freshData = global.CoupangParser.parseProductDetailPage();
+      if (freshData) {
+        productData = Object.assign({}, productData, freshData);
+      }
+    }
+
+    const overlay = document.createElement('div');
+    overlay.id = 'sns-action-modal-overlay';
+    overlay.className = 'sns-modal-overlay';
+
+    const modal = document.createElement('div');
+    modal.className = 'sns-action-modal';
+
+    // Header Title
+    const title1 = document.createElement('div');
+    title1.className = 'sns-modal-title';
+    title1.textContent = '🛒 쿠팡 상품 하드디스크 저장';
+    modal.appendChild(title1);
+
+    // 1. Download Images (Gradient Pill)
+    const imgBtn = createModalButton('🖼️ 대표·상세 이미지 다운로드', 'btn-gradient', () => {
+      if (global.SNSExporter && global.SNSExporter.downloadShoppingImages) {
+        global.SNSExporter.downloadShoppingImages(productData);
+      } else {
+        global.SNSExporter.showToast('⚠️ 이미지 다운로드 함수를 찾을 수 없습니다.');
+      }
+    });
+    modal.appendChild(imgBtn);
+
+    // 2. Save JSON (Purple Pill)
+    const jsonBtn = createModalButton('💾 상품 정보 JSON 저장', 'btn-purple', () => {
+      if (global.SNSExporter && global.SNSExporter.saveProductAsJSON) {
+        global.SNSExporter.saveProductAsJSON(productData);
+      }
+    });
+    modal.appendChild(jsonBtn);
+
+    // 3. Save TXT Summary (Purple Pill)
+    const txtBtn = createModalButton('📝 상품 개요 TXT 저장', 'btn-purple', () => {
+      if (global.SNSExporter && global.SNSExporter.saveProductAsTXT) {
+        global.SNSExporter.saveProductAsTXT(productData);
+      }
+    });
+    modal.appendChild(txtBtn);
+
+    // Section 2 Header: 데이터 내보내기 & 수집
+    const title2 = document.createElement('div');
+    title2.className = 'sns-modal-title sns-title-sub';
+    title2.textContent = '데이터 내보내기 & 복사';
+    modal.appendChild(title2);
+
+    // Dual buttons: CSV & Copy Link
+    const dualRow1 = document.createElement('div');
+    dualRow1.className = 'sns-dual-btn-row';
+
+    const csvBtn = createModalButton('📊 CSV 내보내기', 'btn-purple btn-half', () => {
+      if (global.SNSExporter && global.SNSExporter.saveProductAsCSV) {
+        global.SNSExporter.saveProductAsCSV(productData);
+      }
+    });
+    const copyLinkBtn = createModalButton('🔗 링크 복사', 'btn-purple btn-half', () => {
+      const link = productData.url || window.location.href;
+      global.SNSExporter.copyToClipboard(link, '🔗 상품 링크가 복사되었습니다!');
+    });
+
+    dualRow1.appendChild(csvBtn);
+    dualRow1.appendChild(copyLinkBtn);
+    modal.appendChild(dualRow1);
+
+    // Dual buttons: Copy Text & Save to Board (Supabase)
+    const dualRow2 = document.createElement('div');
+    dualRow2.className = 'sns-dual-btn-row';
+
+    const copyTextBtn = createModalButton('📋 텍스트 복사', 'btn-purple btn-half', () => {
+      const infoStr = `[${productData.title}]\n가격: ${productData.price}\n배송: ${productData.seller}\n링크: ${productData.url || window.location.href}`;
+      global.SNSExporter.copyToClipboard(infoStr, '📋 상품 핵심 정보가 복사되었습니다!');
+    });
+
+    const collectBtn = createModalButton('☁️ 수집함에 저장', 'btn-gradient btn-half', async () => {
+      const dashboardUrl = safeGetURL('collected.html');
+      const cardData = {
+        author: productData.seller || 'Coupang',
+        text: `[${productData.title}] ${productData.price} (${productData.seller})`,
+        link: productData.url || window.location.href,
+        metrics: {
+          views: productData.reviewCount || 0,
+          likes: Math.round((parseFloat(productData.rating) || 4.5) * 100),
+          comments: productData.reviewCount || 0,
+          reposts: 0,
+          shares: 0
+        }
+      };
+
+      if (global.SNSExporter && global.SNSExporter.saveToSupabase) {
+        await global.SNSExporter.saveToSupabase(cardData);
+      }
+      global.SNSExporter.showToast('✅ 쿠팡 상품이 수집함에 저장되었습니다!');
+      window.open(dashboardUrl, '_blank');
+    });
+
+    dualRow2.appendChild(copyTextBtn);
+    dualRow2.appendChild(collectBtn);
+    modal.appendChild(dualRow2);
+
+    // Close Button (Red Circle ✕)
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'sns-modal-close-btn';
+    closeBtn.innerHTML = '✕';
+    closeBtn.addEventListener('click', () => overlay.remove());
+    modal.appendChild(closeBtn);
+
+    overlay.appendChild(modal);
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) overlay.remove();
+    });
+
+    document.body.appendChild(overlay);
+  }
+
   const SNSActionMenu = {
     createActionButton,
-    openActionModal
+    openActionModal,
+    openShoppingActionModal
   };
 
   if (typeof module === 'object' && module.exports) {

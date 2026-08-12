@@ -1,0 +1,205 @@
+/**
+ * Cloudflare Pages & Workers / Supabase Hybrid Data Store Client
+ * Manages bulletin board posts with local storage caching and Cloudflare REST API sync.
+ */
+(function (global) {
+  'use strict';
+
+  const STORAGE_KEY = 'cf_pages_board_posts';
+
+  // Cloudflare Workers REST API endpoint (optional custom worker URL)
+  let cloudflareEndpoint = 'https://api.cloudflare-worker-board.workers.dev/posts';
+
+  // Initial sample board posts
+  const defaultPosts = [
+    {
+      id: 'cf_post_1',
+      category: 'shopping',
+      categoryLabel: '🛒 쿠팡',
+      title: '[쿠팡] 로켓배송 게이밍 무선 마우스 10000DPI',
+      author: '쿠팡쇼핑봇',
+      content: '쿠팡에서 인기 급상승 중인 게이밍 마우스입니다. 할인율 38% 특가 판매 중.',
+      price: '29,900원',
+      link: 'https://www.coupang.com/vp/products/8761299525',
+      images: [
+        'https://thumbnail10.coupangcdn.com/thumbnails/remote/492x492ex/image/vendor_inventory/images/2023/10/01/12/3/sample.jpg'
+      ],
+      views: 1420,
+      likes: 128,
+      comments: 34,
+      status: 'published',
+      createdAt: '2026-08-12 16:30'
+    },
+    {
+      id: 'cf_post_2',
+      category: 'sns',
+      categoryLabel: '📢 스레드',
+      title: '코스트코 인기 상품 리뷰 & 성과 지표 4.8배 폭발',
+      author: '1lumi_log',
+      content: '와... 이거 진짜 신세계다ㄷㄷ 길이 조절로 설치할 수 있는 커튼 발견함;; 이사갈 땐 떼가야징 ㅋㅋㅋㅋ',
+      price: '-',
+      link: 'https://www.threads.com/@1lumi_log/post/costco_sample',
+      images: [],
+      views: 4481,
+      likes: 232,
+      comments: 18,
+      status: 'published',
+      createdAt: '2026-08-11 19:15'
+    },
+    {
+      id: 'cf_post_3',
+      category: 'general',
+      categoryLabel: '💬 자유게시판',
+      title: 'Cloudflare Pages 호스팅으로 구축한 무료 게시판 사용 가이드',
+      author: '관리자',
+      content: 'Cloudflare Pages 호스팅과 Workers/Supabase DB를 연동하여 완전 무료로 운영되는 게시판입니다. 우측 상단의 [✏️ 새 글 작성] 버튼을 눌러 자유롭게 글을 작성해보세요.',
+      price: '-',
+      link: 'https://pages.cloudflare.com',
+      images: [],
+      views: 950,
+      likes: 85,
+      comments: 12,
+      status: 'published',
+      createdAt: '2026-08-10 10:00'
+    }
+  ];
+
+  function getLocalPosts() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        return JSON.parse(raw);
+      }
+    } catch (e) {
+      console.warn('[CloudflareClient] LocalStorage read failed:', e);
+    }
+    saveLocalPosts(defaultPosts);
+    return defaultPosts;
+  }
+
+  function saveLocalPosts(posts) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(posts));
+    } catch (e) {
+      console.warn('[CloudflareClient] LocalStorage write failed:', e);
+    }
+  }
+
+  async function fetchBoardPosts() {
+    let posts = getLocalPosts();
+
+    // Try fetching remote posts from Supabase or Cloudflare REST API if configured
+    if (global.supabaseClient) {
+      try {
+        const { data, error } = await global.supabaseClient
+          .from('sns_metrics')
+          .select('*')
+          .order('saved_at', { ascending: false });
+
+        if (!error && data && data.length > 0) {
+          const remotePosts = data.map((item, idx) => ({
+            id: item.id || `sp_${idx}`,
+            category: item.text && item.text.includes('쿠팡') ? 'shopping' : 'sns',
+            categoryLabel: item.text && item.text.includes('쿠팡') ? '🛒 쿠팡' : '📢 스레드',
+            title: item.text ? item.text.substring(0, 50) : '수집된 콘텐츠',
+            author: item.author || '익명',
+            content: item.text || '',
+            price: item.price || '-',
+            link: item.link || window.location.href,
+            images: item.images || [],
+            views: item.views || 0,
+            likes: item.likes || 0,
+            comments: item.comments || 0,
+            status: 'published',
+            createdAt: item.saved_at ? new Date(item.saved_at).toLocaleString('ko-KR') : new Date().toLocaleString('ko-KR')
+          }));
+
+          // Merge local posts with remote posts (avoid duplicates by id)
+          const postMap = new Map();
+          remotePosts.forEach(p => postMap.set(p.id, p));
+          posts.forEach(p => {
+            if (!postMap.has(p.id)) postMap.set(p.id, p);
+          });
+
+          posts = Array.from(postMap.values());
+          saveLocalPosts(posts);
+        }
+      } catch (err) {
+        console.warn('[CloudflareClient] Supabase sync note:', err);
+      }
+    }
+
+    return posts;
+  }
+
+  async function saveBoardPost(newPostData) {
+    const posts = getLocalPosts();
+    const newPost = {
+      id: `cf_post_${Date.now()}`,
+      category: newPostData.category || 'general',
+      categoryLabel: getCategoryLabel(newPostData.category),
+      title: newPostData.title || '제목 없음',
+      author: newPostData.author || '익명',
+      content: newPostData.content || '',
+      price: newPostData.price || '-',
+      link: newPostData.link || '#',
+      images: newPostData.images || [],
+      views: 0,
+      likes: 0,
+      comments: 0,
+      status: 'published',
+      createdAt: new Date().toLocaleString('ko-KR')
+    };
+
+    posts.unshift(newPost);
+    saveLocalPosts(posts);
+
+    // Also push to Supabase if connected
+    if (global.supabaseClient) {
+      try {
+        await global.supabaseClient.from('sns_metrics').insert([{
+          author: newPost.author,
+          text: `[${newPost.title}] ${newPost.content}`,
+          link: newPost.link,
+          views: 0,
+          likes: 0,
+          comments: 0,
+          saved_at: new Date().toISOString()
+        }]);
+      } catch (e) {
+        console.warn('[CloudflareClient] Supabase insert fallback:', e);
+      }
+    }
+
+    return newPost;
+  }
+
+  async function deleteBoardPost(postId) {
+    let posts = getLocalPosts();
+    posts = posts.filter(p => p.id !== postId && String(p.id) !== String(postId));
+    saveLocalPosts(posts);
+    return true;
+  }
+
+  function getCategoryLabel(cat) {
+    switch (cat) {
+      case 'shopping': return '🛒 쿠팡/쇼핑';
+      case 'sns': return '📢 스레드/SNS';
+      case 'trend': return '🔥 트렌드';
+      case 'general': default: return '💬 자유게시판';
+    }
+  }
+
+  const CloudflareClient = {
+    fetchBoardPosts,
+    saveBoardPost,
+    deleteBoardPost,
+    getLocalPosts,
+    getCategoryLabel
+  };
+
+  if (typeof module === 'object' && module.exports) {
+    module.exports = CloudflareClient;
+  }
+  global.CloudflareClient = CloudflareClient;
+}(typeof self !== 'undefined' ? self : (typeof window !== 'undefined' ? window : this)));

@@ -132,6 +132,154 @@
     }
   }
 
+  function saveProductAsJSON(productData) {
+    const jsonStr = JSON.stringify(productData, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const cleanId = (productData.productId || 'product').replace(/[^a-zA-Z0-9_-]/g, '');
+    triggerDownload(url, `coupang_product_${cleanId}_${Date.now()}.json`);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    showToast('💾 상품 정보가 JSON 파일로 저장되었습니다.');
+  }
+
+  function saveProductAsCSV(productData) {
+    const rows = [
+      ['상품명', '판매가', '정가', '할인율', '평점', '리뷰수', '판매자/배송', '상품ID', '상품링크', '수집시각'],
+      [
+        productData.title || '',
+        productData.price || '',
+        productData.originalPrice || '',
+        productData.discountRate || '',
+        productData.rating || '',
+        productData.reviewCount || '',
+        productData.seller || '',
+        productData.productId || '',
+        productData.url || window.location.href,
+        new Date().toLocaleString('ko-KR')
+      ],
+      [],
+      ['[대표 이미지 목록]'],
+      ...(productData.mainImages || []).map((img, i) => [`대표이미지 ${i + 1}`, img]),
+      [],
+      ['[상세 설명 이미지 목록]'],
+      ...(productData.detailImages || []).map((img, i) => [`상세이미지 ${i + 1}`, img]),
+      [],
+      ['[상품 옵션 목록]'],
+      ...(productData.options || []).map((opt, i) => [`옵션 ${i + 1}`, opt])
+    ];
+
+    const cleanId = (productData.productId || 'product').replace(/[^a-zA-Z0-9_-]/g, '');
+    exportCSV(`coupang_product_${cleanId}_${Date.now()}.csv`, rows);
+    showToast('📊 상품 정보가 CSV 파일로 저장되었습니다.');
+  }
+
+  function saveProductAsTXT(productData) {
+    let txt = `=======================================\n`;
+    txt += `🛒 쿠팡/쇼핑몰 상품 상세 정보 요약\n`;
+    txt += `=======================================\n\n`;
+    txt += `📌 상품명: ${productData.title || '정보없음'}\n`;
+    txt += `💰 판매가: ${productData.price || '정보없음'}\n`;
+    txt += `🏷️ 정가: ${productData.originalPrice || '-'}\n`;
+    txt += `⚡ 할인율: ${productData.discountRate || '-'}\n`;
+    txt += `⭐ 평점: ${productData.rating || '-'} (리뷰 ${productData.reviewCount || 0}개)\n`;
+    txt += `🚚 배송/판매자: ${productData.seller || '정보없음'}\n`;
+    txt += `🆔 상품ID: ${productData.productId || '정보없음'}\n`;
+    txt += `🔗 상품 링크: ${productData.url || window.location.href}\n\n`;
+
+    if (productData.options && productData.options.length > 0) {
+      txt += `📋 [선택 가능 옵션]\n`;
+      productData.options.forEach((opt, idx) => {
+        txt += `  - ${opt}\n`;
+      });
+      txt += `\n`;
+    }
+
+    if (productData.mainImages && productData.mainImages.length > 0) {
+      txt += `🖼️ [대표 이미지 URL]\n`;
+      productData.mainImages.forEach((img, idx) => {
+        txt += `  ${idx + 1}. ${img}\n`;
+      });
+      txt += `\n`;
+    }
+
+    if (productData.detailImages && productData.detailImages.length > 0) {
+      txt += `📷 [상세페이지 이미지 URL]\n`;
+      productData.detailImages.forEach((img, idx) => {
+        txt += `  ${idx + 1}. ${img}\n`;
+      });
+      txt += `\n`;
+    }
+
+    const cleanId = (productData.productId || 'product').replace(/[^a-zA-Z0-9_-]/g, '');
+    saveTextAsFile(txt, `coupang_product_${cleanId}_${Date.now()}.txt`);
+    showToast('💾 상품 요약 텍스트 파일이 저장되었습니다.');
+  }
+
+  function downloadShoppingImages(productData) {
+    // Real-time dynamic rescan if Coupang parser is available
+    if (global.CoupangParser && typeof global.CoupangParser.parseProductDetailPage === 'function') {
+      const freshData = global.CoupangParser.parseProductDetailPage();
+      if (freshData && (freshData.mainImages.length > 0 || freshData.detailImages.length > 0)) {
+        productData = freshData;
+      }
+    }
+
+    let mainImgs = Array.from(new Set(productData.mainImages || []));
+    let detailImgs = Array.from(new Set(productData.detailImages || []));
+
+    // Fallback: If no images found in productData, scan all img elements on current document
+    if (mainImgs.length === 0 && detailImgs.length === 0) {
+      document.querySelectorAll('img').forEach(img => {
+        const src = img.getAttribute('data-src') || 
+                    img.getAttribute('data-lazy-src') || 
+                    img.getAttribute('data-original') || 
+                    img.getAttribute('data-detail-url') ||
+                    img.getAttribute('src');
+        if (src && !src.includes('data:image') && (src.includes('coupangcdn.com') || src.includes('/image/')) &&
+            !src.includes('icon') && !src.includes('badge') && !src.includes('avatar') && !src.includes('logo') && !src.includes('btn') && !src.includes('arrow')) {
+          let clean = src.trim();
+          if (clean.startsWith('//')) clean = 'https:' + clean;
+          clean = clean.replace(/\/thumbnails\/remote\/\d+x\d+ex\//, '/thumbnails/remote/1000x1000ex/');
+          clean = clean.replace(/\/thumbnails\/remote\/q\d+\//, '/thumbnails/remote/1000x1000ex/');
+          clean = clean.replace(/\/thumbnails\/remote\/\d+x\d+\//, '/thumbnails/remote/1000x1000ex/');
+          if (!mainImgs.includes(clean)) {
+            mainImgs.push(clean);
+          }
+        }
+      });
+    }
+
+    const totalCount = mainImgs.length + detailImgs.length;
+
+    if (totalCount === 0) {
+      showToast('⚠️ 다운로드할 상품 이미지를 찾지 못했습니다. 상세페이지 이미지가 로드되도록 조금 스크롤 후 다시 시도해주세요.');
+      return;
+    }
+
+    showToast(`🖼️ 총 ${totalCount}개 이미지 다운로드를 시작합니다 (하드디스크 저장)`);
+
+    const cleanId = (productData.productId || 'product').replace(/[^a-zA-Z0-9_-]/g, '');
+    let delay = 0;
+
+    // Download main images
+    mainImgs.forEach((imgUrl, idx) => {
+      setTimeout(() => {
+        const ext = imgUrl.includes('.png') ? 'png' : imgUrl.includes('.webp') ? 'webp' : 'jpg';
+        triggerDownload(imgUrl, `coupang_${cleanId}_main_${idx + 1}.${ext}`);
+      }, delay);
+      delay += 250;
+    });
+
+    // Download detail images
+    detailImgs.forEach((imgUrl, idx) => {
+      setTimeout(() => {
+        const ext = imgUrl.includes('.png') ? 'png' : imgUrl.includes('.webp') ? 'webp' : 'jpg';
+        triggerDownload(imgUrl, `coupang_${cleanId}_detail_${idx + 1}.${ext}`);
+      }, delay);
+      delay += 250;
+    });
+  }
+
   const SNSExporter = {
     isContextValid,
     showToast,
@@ -139,7 +287,11 @@
     saveTextAsFile,
     copyToClipboard,
     exportCSV,
-    saveToSupabase
+    saveToSupabase,
+    saveProductAsJSON,
+    saveProductAsCSV,
+    saveProductAsTXT,
+    downloadShoppingImages
   };
 
   if (typeof module === 'object' && module.exports) {

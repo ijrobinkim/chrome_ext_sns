@@ -1,33 +1,15 @@
 /**
- * SNS Dashboard Logic - Matching Photo 1 Data Table & Controls
+ * Cloudflare Pages & SNS Dashboard Bulletin Board Logic
  */
 (function () {
   'use strict';
 
-  let allItems = [];
+  let allPosts = [];
   let currentFilterStatus = 'all';
+  let currentCategory = 'all';
   let currentSearchKeyword = '';
-  let currentGradeFilter = 'all';
   let currentLayoutMode = 'list'; // 'list' | 'grid'
-
-  // Default sample item matching Photo 1 exact screenshot
-  const photo1Sample = {
-    id: 1,
-    author: '1lumi_log',
-    text: '코스트코에서 다들 이거 담길래',
-    date: '2026-07-29',
-    views: 3300,
-    likes: 8,
-    comments: 3,
-    reposts: 2,
-    shares: 1,
-    status: 'editing', // 편집
-    statusLabel: '편집',
-    multiplier: 4.8,
-    multiplierLabel: '우수 4.8배',
-    savedDate: '7/29',
-    link: 'https://www.threads.com/@1lumi_log/post/costco_sample'
-  };
+  let activeViewingPostId = null;
 
   document.addEventListener('DOMContentLoaded', () => {
     loadData();
@@ -36,63 +18,22 @@
 
   async function loadData() {
     try {
-      if (window.supabaseClient) {
-        const { data, error } = await window.supabaseClient
-          .from('sns_metrics')
-          .select('*')
-          .order('saved_at', { ascending: false });
-
-        if (error) {
-          console.error('Supabase fetch error:', error);
-          allItems = [photo1Sample];
-        } else if (data && data.length > 0) {
-          allItems = data.map((item, idx) => {
-            const dateObj = item.saved_at ? new Date(item.saved_at) : new Date();
-            const dateStr = dateObj.toISOString().split('T')[0];
-            const shortDate = `${dateObj.getMonth() + 1}/${dateObj.getDate()}`;
-            
-            // 임의의 성과배수 계산 로직 (예: 인게이지먼트율)
-            let multiplier = 0;
-            if (item.views > 0) {
-              multiplier = ((item.likes + item.comments + item.reposts + item.shares) / item.views * 100) || 0;
-            }
-
-            return {
-              id: item.id || idx + 1,
-              author: item.author || 'unknown',
-              text: item.text || '',
-              date: dateStr,
-              views: item.views || 0,
-              likes: item.likes || 0,
-              comments: item.comments || 0,
-              reposts: item.reposts || 0,
-              shares: item.shares || 0,
-              status: 'collected',
-              statusLabel: '수집완료',
-              multiplier: multiplier,
-              multiplierLabel: multiplier > 0 ? `${multiplier.toFixed(1)}%` : '-',
-              savedDate: shortDate,
-              link: item.link || 'https://www.threads.com'
-            };
-          });
-        } else {
-          // 데이터가 없을 경우 기본 샘플 표시
-          allItems = [photo1Sample];
-        }
+      if (window.CloudflareClient && typeof window.CloudflareClient.fetchBoardPosts === 'function') {
+        allPosts = await window.CloudflareClient.fetchBoardPosts();
       } else {
-        allItems = [photo1Sample];
+        allPosts = [];
       }
     } catch (e) {
       console.error('Dashboard loadData Error:', e);
-      allItems = [photo1Sample];
+      allPosts = [];
     }
     renderDashboard();
   }
 
   function bindEvents() {
-    // Status Tabs
+    // 1. Status Tabs
     document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
+      btn.addEventListener('click', () => {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         currentFilterStatus = btn.dataset.status;
@@ -100,7 +41,7 @@
       });
     });
 
-    // Keyword Filter Input
+    // 2. Search Inputs
     const keywordInput = document.getElementById('filter-keyword');
     if (keywordInput) {
       keywordInput.addEventListener('input', (e) => {
@@ -109,7 +50,6 @@
       });
     }
 
-    // Top Search Input
     const topSearch = document.getElementById('top-search-input');
     if (topSearch) {
       topSearch.addEventListener('input', (e) => {
@@ -118,202 +58,294 @@
       });
     }
 
-    // Grade Filter Select
-    const gradeSelect = document.getElementById('filter-grade');
-    if (gradeSelect) {
-      gradeSelect.addEventListener('change', (e) => {
-        currentGradeFilter = e.target.value;
+    // 3. Category Filter
+    const catSelect = document.getElementById('filter-category');
+    if (catSelect) {
+      catSelect.addEventListener('change', (e) => {
+        currentCategory = e.target.value;
         renderDashboard();
       });
     }
 
-    // Layout Toggle Mode (Grid vs List)
-    const btnList = document.getElementById('btn-list-mode');
+    // 4. Layout Mode Toggle (Grid vs List)
     const btnGrid = document.getElementById('btn-grid-mode');
+    const btnList = document.getElementById('btn-list-mode');
 
-    if (btnList && btnGrid) {
-      btnList.addEventListener('click', () => {
-        btnList.classList.add('active');
-        btnGrid.classList.remove('active');
-        currentLayoutMode = 'list';
-        renderDashboard();
-      });
-
+    if (btnGrid && btnList) {
       btnGrid.addEventListener('click', () => {
+        currentLayoutMode = 'grid';
         btnGrid.classList.add('active');
         btnList.classList.remove('active');
-        currentLayoutMode = 'grid';
+        renderDashboard();
+      });
+
+      btnList.addEventListener('click', () => {
+        currentLayoutMode = 'list';
+        btnList.classList.add('active');
+        btnGrid.classList.remove('active');
         renderDashboard();
       });
     }
 
-    // Go to Threads collect button
+    // 5. Open Create Post Modal
+    const btnCreate = document.getElementById('btn-create-post');
+    const modalCreate = document.getElementById('modal-create-post');
+    const btnCancelCreate = document.getElementById('btn-cancel-create');
+    const btnSubmitCreate = document.getElementById('btn-submit-create');
+
+    if (btnCreate && modalCreate) {
+      btnCreate.addEventListener('click', () => {
+        modalCreate.style.display = 'flex';
+      });
+    }
+
+    if (btnCancelCreate && modalCreate) {
+      btnCancelCreate.addEventListener('click', () => {
+        modalCreate.style.display = 'none';
+      });
+    }
+
+    if (btnSubmitCreate && modalCreate) {
+      btnSubmitCreate.addEventListener('click', async () => {
+        const title = document.getElementById('post-input-title')?.value.trim();
+        const category = document.getElementById('post-input-category')?.value;
+        const author = document.getElementById('post-input-author')?.value.trim() || '익명';
+        const content = document.getElementById('post-input-content')?.value.trim();
+        const link = document.getElementById('post-input-link')?.value.trim();
+
+        if (!title || !content) {
+          alert('게시글 제목과 본문 내용을 입력해주세요.');
+          return;
+        }
+
+        if (window.CloudflareClient && typeof window.CloudflareClient.saveBoardPost === 'function') {
+          await window.CloudflareClient.saveBoardPost({
+            title,
+            category,
+            author,
+            content,
+            link
+          });
+        }
+
+        // Reset inputs & close modal
+        document.getElementById('post-input-title').value = '';
+        document.getElementById('post-input-content').value = '';
+        document.getElementById('post-input-link').value = '';
+        modalCreate.style.display = 'none';
+
+        await loadData();
+      });
+    }
+
+    // 6. View Post Detail Modal Controls
+    const modalView = document.getElementById('modal-view-post');
+    const btnCloseView = document.getElementById('btn-close-view');
+    const btnDeletePost = document.getElementById('btn-delete-post');
+
+    if (btnCloseView && modalView) {
+      btnCloseView.addEventListener('click', () => {
+        modalView.style.display = 'none';
+      });
+    }
+
+    if (btnDeletePost && modalView) {
+      btnDeletePost.addEventListener('click', async () => {
+        if (!activeViewingPostId) return;
+        if (confirm('이 게시글을 정말 삭제하시겠습니까?')) {
+          if (window.CloudflareClient && typeof window.CloudflareClient.deleteBoardPost === 'function') {
+            await window.CloudflareClient.deleteBoardPost(activeViewingPostId);
+          }
+          modalView.style.display = 'none';
+          await loadData();
+        }
+      });
+    }
+
+    // Modal background overlay click close
+    [modalCreate, modalView].forEach(m => {
+      if (m) {
+        m.addEventListener('click', (e) => {
+          if (e.target === m) m.style.display = 'none';
+        });
+      }
+    });
+
+    // Action Collect Btn
     const btnCollect = document.getElementById('btn-goto-collect');
     if (btnCollect) {
       btnCollect.addEventListener('click', () => {
-        window.open('https://www.threads.com/', '_blank');
+        window.open('https://coupang.com', '_blank');
       });
     }
   }
 
-  function renderDashboard() {
-    // Filter items
-    const filtered = allItems.filter(item => {
-      // Status filter
-      if (currentFilterStatus !== 'all' && item.status !== currentFilterStatus) {
+  function getFilteredPosts() {
+    return allPosts.filter(post => {
+      // Category filter
+      if (currentCategory !== 'all' && post.category !== currentCategory) {
         return false;
       }
-      // Keyword filter
+
+      // Keyword search
       if (currentSearchKeyword) {
-        const textMatch = item.text.toLowerCase().includes(currentSearchKeyword);
-        const authorMatch = item.author.toLowerCase().includes(currentSearchKeyword);
-        if (!textMatch && !authorMatch) return false;
+        const titleMatch = (post.title || '').toLowerCase().includes(currentSearchKeyword);
+        const contentMatch = (post.content || '').toLowerCase().includes(currentSearchKeyword);
+        const authorMatch = (post.author || '').toLowerCase().includes(currentSearchKeyword);
+        if (!titleMatch && !contentMatch && !authorMatch) {
+          return false;
+        }
       }
-      // Grade filter
-      if (currentGradeFilter === 'super' && item.multiplier < 8) return false;
-      if (currentGradeFilter === 'medium' && (item.multiplier < 3 || item.multiplier >= 8)) return false;
-      if (currentGradeFilter === 'normal' && item.multiplier >= 3) return false;
 
       return true;
     });
+  }
 
-    // Update Counts
-    document.getElementById('count-all').textContent = allItems.length;
-    document.getElementById('count-collected').textContent = allItems.filter(i => i.status === 'collected').length;
-    document.getElementById('count-analyzed').textContent = allItems.filter(i => i.status === 'analyzed').length;
-    document.getElementById('count-editing').textContent = allItems.filter(i => i.status === 'editing').length;
-    document.getElementById('count-failed').textContent = allItems.filter(i => i.status === 'failed').length;
-    document.getElementById('count-reserved').textContent = allItems.filter(i => i.status === 'reserved').length;
-    document.getElementById('count-uploaded').textContent = allItems.filter(i => i.status === 'uploaded').length;
+  function openViewModal(post) {
+    activeViewingPostId = post.id;
+    const modalView = document.getElementById('modal-view-post');
+    if (!modalView) return;
 
-    document.getElementById('total-item-count').textContent = `${filtered.length}개`;
+    document.getElementById('view-post-category').textContent = post.categoryLabel || post.category;
+    document.getElementById('view-post-title').textContent = post.title || '제목 없음';
+    document.getElementById('view-post-author').textContent = post.author || '익명';
+    document.getElementById('view-post-date').textContent = post.createdAt || '';
+    document.getElementById('view-post-content').textContent = post.content || '';
 
-    const tableBody = document.getElementById('table-body');
-    if (!tableBody) return;
-    tableBody.innerHTML = '';
-
-    if (filtered.length === 0) {
-      tableBody.innerHTML = `
-        <tr>
-          <td colspan="10" class="empty-state">
-            📌 수집된 스레드가 없습니다.<br>Threads 페이지에서 🐥 버튼 -> [수집하기]를 클릭해보세요!
-          </td>
-        </tr>
-      `;
-      return;
+    const linkEl = document.getElementById('view-post-link');
+    if (linkEl) {
+      if (post.link && post.link !== '#') {
+        linkEl.href = post.link;
+        linkEl.style.display = 'inline-block';
+      } else {
+        linkEl.style.display = 'none';
+      }
     }
 
-    // Render Data Rows matching Photo 1
-    filtered.forEach((item, index) => {
-      const tr = document.createElement('tr');
+    // Images
+    const imgsContainer = document.getElementById('view-post-images');
+    if (imgsContainer) {
+      imgsContainer.innerHTML = '';
+      if (post.images && post.images.length > 0) {
+        post.images.forEach(src => {
+          const img = document.createElement('img');
+          img.src = src;
+          img.style.width = '100px';
+          img.style.height = '100px';
+          img.style.objectFit = 'cover';
+          img.style.borderRadius = '8px';
+          img.style.border = '1px solid #313244';
+          imgsContainer.appendChild(img);
+        });
+      }
+    }
 
-      // 1. Checkbox
-      const tdCheck = document.createElement('td');
-      tdCheck.innerHTML = `<input type="checkbox" class="row-checkbox" value="${item.id}">`;
-      tr.appendChild(tdCheck);
+    modalView.style.display = 'flex';
+  }
 
-      // 2. Index #
-      const tdIdx = document.createElement('td');
-      tdIdx.style.color = '#7c3aed';
-      tdIdx.style.fontWeight = '700';
-      tdIdx.textContent = index + 1;
-      tr.appendChild(tdIdx);
+  function renderDashboard() {
+    const posts = getFilteredPosts();
 
-      // 3. 콘텐츠 - 작성일 (Photo 1 matching layout)
-      const tdPost = document.createElement('td');
-      tdPost.innerHTML = `
-        <div class="post-cell">
-          <div class="avatar" style="width:34px;height:34px;font-size:12px;">${item.author[0].toUpperCase()}</div>
-          <div class="post-info">
-            <div class="post-title-text" title="${escapeHtml(item.text)}">${escapeHtml(item.text)}</div>
-            <div class="post-meta-sub">@${escapeHtml(item.author)} · ${item.date} · 팔로워 457</div>
-          </div>
-        </div>
-      `;
-      tr.appendChild(tdPost);
+    // Update Counts
+    const countAll = document.getElementById('count-all');
+    if (countAll) countAll.textContent = allPosts.length;
 
-      // 4. 조회
-      const tdViews = document.createElement('td');
-      tdViews.style.fontWeight = '600';
-      tdViews.textContent = (item.views || 3300).toLocaleString('ko-KR');
-      tr.appendChild(tdViews);
+    const totalItemCount = document.getElementById('total-item-count');
+    if (totalItemCount) totalItemCount.textContent = `${posts.length}개`;
 
-      // 5. 좋아요
-      const tdLikes = document.createElement('td');
-      tdLikes.textContent = (item.likes || 8).toLocaleString('ko-KR');
-      tr.appendChild(tdLikes);
+    const listContainer = document.getElementById('list-container');
+    const gridContainer = document.getElementById('grid-container');
+    const tbody = document.getElementById('table-body');
 
-      // 6. 답글
-      const tdComments = document.createElement('td');
-      tdComments.textContent = (item.comments || 3).toLocaleString('ko-KR');
-      tr.appendChild(tdComments);
+    if (currentLayoutMode === 'list') {
+      if (listContainer) listContainer.style.display = 'block';
+      if (gridContainer) gridContainer.style.display = 'none';
 
-      // 7. 상태 (Photo 1 yellow pill: 편집)
-      const tdStatus = document.createElement('td');
-      tdStatus.innerHTML = `<span class="status-pill-edit">${item.statusLabel || '편집'}</span>`;
-      tr.appendChild(tdStatus);
-
-      // 8. 성과 배수 (Photo 1 yellow pill badge: 우수 4.8배)
-      const tdMult = document.createElement('td');
-      const multVal = item.multiplier || 4.8;
-      const multLabel = item.multiplierLabel || `우수 ${multVal}배`;
-      tdMult.innerHTML = `<span class="multiplier-pill-photo">${multLabel}</span>`;
-      tr.appendChild(tdMult);
-
-      // 9. 수집일 (7/29)
-      const tdSaved = document.createElement('td');
-      tdSaved.style.color = '#64748b';
-      tdSaved.textContent = item.savedDate || '7/29';
-      tr.appendChild(tdSaved);
-
-      // 10. Actions (🔗, 내 스타일로, 분석하기)
-      const tdActions = document.createElement('td');
-      tdActions.style.textAlign = 'right';
-      
-      const actionGroup = document.createElement('div');
-      actionGroup.className = 'row-actions';
-      actionGroup.style.justifyContent = 'flex-end';
-
-      // Link button
-      const linkBtn = document.createElement('button');
-      linkBtn.className = 'btn-icon-square';
-      linkBtn.innerHTML = '🔗';
-      linkBtn.title = '원본 게시물 보기';
-      linkBtn.addEventListener('click', () => window.open(item.link, '_blank'));
-
-      // Re-style button (내 스타일로)
-      const styleBtn = document.createElement('button');
-      styleBtn.className = 'btn-my-style';
-      styleBtn.textContent = '내 스타일로';
-      styleBtn.addEventListener('click', () => {
-        if (global.SNSExporter) {
-          global.SNSExporter.showToast('✨ AI 텍스트 재작성 모드가 실행되었습니다.');
-        } else {
-          alert('AI 텍스트 재작성 모드: ' + item.text);
+      if (tbody) {
+        tbody.innerHTML = '';
+        if (posts.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 40px; color: #94a3b8;">등록된 게시글이 없습니다. 상단 [✏️ 새 글 작성] 버튼을 눌러보세요.</td></tr>`;
+          return;
         }
-      });
 
-      // Analyze button (분석하기 purple pill)
-      const analyzeBtn = document.createElement('button');
-      analyzeBtn.className = 'btn-analyze-purple';
-      analyzeBtn.textContent = '분석하기';
-      analyzeBtn.addEventListener('click', () => {
-        if (global.SNSExporter) {
-          global.SNSExporter.showToast(`📊 @${item.author} 성과 정밀 분석 완료! (성과배수: ${item.multiplier}배)`);
-        } else {
-          alert(`분석 완료: ${item.author}`);
+        posts.forEach((post, idx) => {
+          const tr = document.createElement('tr');
+          tr.style.cursor = 'pointer';
+          tr.addEventListener('click', () => openViewModal(post));
+
+          tr.innerHTML = `
+            <td><input type="checkbox"></td>
+            <td style="color: #94a3b8;">${idx + 1}</td>
+            <td>
+              <div style="font-weight: 700; color: #f8fafc;">${escapeHtml(post.title)}</div>
+              <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">by ${escapeHtml(post.author)}</div>
+            </td>
+            <td>
+              <span class="status-badge" style="background: rgba(124, 58, 237, 0.2); color: #c4b5fd; border: 1px solid rgba(124, 58, 237, 0.4);">
+                ${escapeHtml(post.categoryLabel || post.category)}
+              </span>
+            </td>
+            <td>${(post.views || 0).toLocaleString()}회</td>
+            <td>❤️ ${post.likes || 0}</td>
+            <td>
+              <span class="status-badge status-collected">게시됨</span>
+            </td>
+            <td style="color: #94a3b8; font-size: 12px;">${escapeHtml(post.createdAt)}</td>
+            <td style="text-align: right;" onclick="event.stopPropagation();">
+              <button class="row-action-btn" style="color: #818cf8; background: none; border: none; font-weight: 700; cursor: pointer;">보기 ➔</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+    } else {
+      // Grid Mode
+      if (listContainer) listContainer.style.display = 'none';
+      if (gridContainer) {
+        gridContainer.style.display = 'grid';
+        gridContainer.innerHTML = '';
+
+        if (posts.length === 0) {
+          gridContainer.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #94a3b8;">등록된 게시글이 없습니다.</div>`;
+          return;
         }
-      });
 
-      actionGroup.appendChild(linkBtn);
-      actionGroup.appendChild(styleBtn);
-      actionGroup.appendChild(analyzeBtn);
+        posts.forEach(post => {
+          const card = document.createElement('div');
+          card.style.background = '#181824';
+          card.style.border = '1px solid #2e2e3e';
+          card.style.borderRadius = '16px';
+          card.style.padding = '18px';
+          card.style.cursor = 'pointer';
+          card.style.transition = 'transform 0.2s, border-color 0.2s';
 
-      tdActions.appendChild(actionGroup);
-      tr.appendChild(tdActions);
+          card.addEventListener('mouseenter', () => {
+            card.style.transform = 'translateY(-3px)';
+            card.style.borderColor = '#7c3aed';
+          });
+          card.addEventListener('mouseleave', () => {
+            card.style.transform = 'none';
+            card.style.borderColor = '#2e2e3e';
+          });
+          card.addEventListener('click', () => openViewModal(post));
 
-      tableBody.appendChild(tr);
-    });
+          const firstImg = (post.images && post.images.length > 0) ? post.images[0] : null;
+
+          card.innerHTML = `
+            ${firstImg ? `<img src="${firstImg}" style="width:100%; height:140px; object-fit:cover; border-radius:10px; margin-bottom:12px;">` : ''}
+            <div style="font-size: 11px; color: #a5b4fc; font-weight: 700; margin-bottom: 6px;">${escapeHtml(post.categoryLabel || post.category)}</div>
+            <div style="font-size: 15px; font-weight: 800; color: #fff; margin-bottom: 8px; line-height: 1.3;">${escapeHtml(post.title)}</div>
+            <div style="font-size: 13px; color: #cbd5e1; margin-bottom: 12px; height: 38px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${escapeHtml(post.content)}</div>
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #94a3b8; border-top: 1px solid #282838; padding-top: 10px;">
+              <span>by ${escapeHtml(post.author)}</span>
+              <span>❤️ ${post.likes || 0}</span>
+            </div>
+          `;
+
+          gridContainer.appendChild(card);
+        });
+      }
+    }
   }
 
   function escapeHtml(str) {

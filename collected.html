@@ -75,13 +75,21 @@
             <button class="tab-btn" data-status="uploaded">업로드 <span class="badge-count" id="count-uploaded">0</span></button>
           </div>
 
+          <button class="action-collect-btn" id="btn-create-post" style="background: linear-gradient(135deg, #f97316, #ea580c); margin-right: 8px;">✏️ 새 글 작성</button>
           <button class="action-collect-btn" id="btn-goto-collect">수집하러 가기 ✨</button>
         </div>
 
-        <!-- Filter Controls Row (Photo 1) -->
+        <!-- Filter Controls Row -->
         <div class="filter-controls">
           <div class="search-filter-group">
-            <input type="text" class="input-search" id="filter-keyword" placeholder="본문·작성자 검색">
+            <input type="text" class="input-search" id="filter-keyword" placeholder="제목·본문·작성자 검색">
+            <select class="select-filter" id="filter-category">
+              <option value="all">전체 카테고리</option>
+              <option value="shopping">🛒 쿠팡 / 쇼핑</option>
+              <option value="sns">📢 스레드 / SNS</option>
+              <option value="trend">🔥 트렌드</option>
+              <option value="general">💬 자유게시판</option>
+            </select>
             <select class="select-filter" id="filter-grade">
               <option value="all">전체 등급</option>
               <option value="super">강력 / 폭발 (>=8배)</option>
@@ -91,28 +99,27 @@
           </div>
 
           <div class="layout-toggle-group">
-            <span class="item-count-text" id="total-item-count">1개</span>
+            <span class="item-count-text" id="total-item-count">0개</span>
             <div class="toggle-pill-group">
-              <button class="toggle-pill-btn" id="btn-grid-mode">그리드</button>
-              <button class="toggle-pill-btn active" id="btn-list-mode">리스트</button>
+              <button class="toggle-pill-btn" id="btn-grid-mode">그리드 뷰</button>
+              <button class="toggle-pill-btn active" id="btn-list-mode">리스트 뷰</button>
             </div>
           </div>
         </div>
 
-        <!-- Data Table Container (Photo 1) -->
-        <div class="table-card-container">
+        <!-- Data Table Container (List View) -->
+        <div class="table-card-container" id="list-container">
           <table class="data-table" id="dashboard-table">
             <thead>
               <tr>
                 <th style="width: 40px;"><input type="checkbox" id="check-all"></th>
                 <th style="width: 40px;">#</th>
-                <th>콘텐츠 - 작성일 ↕</th>
-                <th>조회 ↕</th>
+                <th>게시글/상품 - 작성일 ↕</th>
+                <th>카테고리 ↕</th>
+                <th>조회수 ↕</th>
                 <th>좋아요 ↕</th>
-                <th>답글 ↕</th>
                 <th>상태 ↕</th>
-                <th>성과 배수 ↕</th>
-                <th>수집일 ↕</th>
+                <th>수집/작성일 ↕</th>
                 <th style="text-align: right;">작업</th>
               </tr>
             </thead>
@@ -121,12 +128,88 @@
             </tbody>
           </table>
         </div>
+
+        <!-- Grid Container (Grid View) -->
+        <div id="grid-container" style="display: none; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; margin-top: 16px;">
+          <!-- Dynamically rendered cards -->
+        </div>
+
       </main>
+    </div>
+  </div>
+
+  <!-- Modal 1: Create Post Modal -->
+  <div id="modal-create-post" class="sns-modal-overlay" style="display: none;">
+    <div class="sns-action-modal" style="max-width: 520px; text-align: left;">
+      <div class="sns-modal-title" style="font-size: 18px; margin-bottom: 16px;">✏️ Cloudflare 게시판 - 새 글 작성</div>
+      
+      <div style="margin-bottom: 12px;">
+        <label style="font-size: 12px; font-weight: 700; color: #a5b4fc; display: block; margin-bottom: 4px;">카테고리</label>
+        <select id="post-input-category" style="width: 100%; padding: 10px; background: #1e1e2e; border: 1px solid #313244; color: #fff; border-radius: 8px;">
+          <option value="general">💬 자유게시판</option>
+          <option value="shopping">🛒 쿠팡 / 쇼핑</option>
+          <option value="sns">📢 스레드 / SNS</option>
+          <option value="trend">🔥 트렌드</option>
+        </select>
+      </div>
+
+      <div style="margin-bottom: 12px;">
+        <label style="font-size: 12px; font-weight: 700; color: #a5b4fc; display: block; margin-bottom: 4px;">게시글 제목</label>
+        <input type="text" id="post-input-title" placeholder="제목을 입력하세요" style="width: 100%; padding: 10px; background: #1e1e2e; border: 1px solid #313244; color: #fff; border-radius: 8px;">
+      </div>
+
+      <div style="margin-bottom: 12px;">
+        <label style="font-size: 12px; font-weight: 700; color: #a5b4fc; display: block; margin-bottom: 4px;">작성자</label>
+        <input type="text" id="post-input-author" placeholder="작성자 이름" style="width: 100%; padding: 10px; background: #1e1e2e; border: 1px solid #313244; color: #fff; border-radius: 8px;">
+      </div>
+
+      <div style="margin-bottom: 12px;">
+        <label style="font-size: 12px; font-weight: 700; color: #a5b4fc; display: block; margin-bottom: 4px;">본문 내용</label>
+        <textarea id="post-input-content" rows="4" placeholder="내용을 입력하세요..." style="width: 100%; padding: 10px; background: #1e1e2e; border: 1px solid #313244; color: #fff; border-radius: 8px; font-family: inherit; resize: vertical;"></textarea>
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <label style="font-size: 12px; font-weight: 700; color: #a5b4fc; display: block; margin-bottom: 4px;">관련 링크 (선택)</label>
+        <input type="text" id="post-input-link" placeholder="https://..." style="width: 100%; padding: 10px; background: #1e1e2e; border: 1px solid #313244; color: #fff; border-radius: 8px;">
+      </div>
+
+      <div style="display: flex; gap: 10px; justify-content: flex-end;">
+        <button id="btn-cancel-create" class="sns-modal-btn btn-purple" style="width: 100px;">취소</button>
+        <button id="btn-submit-create" class="sns-modal-btn btn-gradient" style="width: 120px;">작성 완료 ✨</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 2: View Post Detail Modal -->
+  <div id="modal-view-post" class="sns-modal-overlay" style="display: none;">
+    <div class="sns-action-modal" style="max-width: 600px; text-align: left;">
+      <div id="view-post-category" style="display: inline-block; font-size: 11px; padding: 4px 10px; background: rgba(124, 58, 237, 0.2); color: #c4b5fd; border-radius: 20px; margin-bottom: 8px; font-weight: 700;">카테고리</div>
+      <div id="view-post-title" style="font-size: 18px; font-weight: 800; color: #fff; margin-bottom: 8px;">제목</div>
+      <div style="font-size: 12px; color: #94a3b8; margin-bottom: 16px;">
+        작성자: <span id="view-post-author" style="color: #e2e8f0; font-weight: 600;">-</span> | 작성일: <span id="view-post-date">-</span>
+      </div>
+      
+      <div id="view-post-content" style="background: #181824; border: 1px solid #2e2e3e; padding: 16px; border-radius: 12px; font-size: 14px; color: #cbd5e1; line-height: 1.6; margin-bottom: 16px; white-space: pre-wrap;">
+        본문 내용
+      </div>
+
+      <div id="view-post-images" style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px;">
+        <!-- Images injected -->
+      </div>
+
+      <div style="display: flex; gap: 10px; justify-content: space-between; align-items: center;">
+        <a id="view-post-link" href="#" target="_blank" style="font-size: 13px; color: #818cf8; font-weight: 700; text-decoration: none;">🔗 원본 링크 보기</a>
+        <div style="display: flex; gap: 8px;">
+          <button id="btn-delete-post" class="sns-modal-btn" style="background: #ef4444; color: #fff; width: 80px; padding: 8px 12px;">삭제</button>
+          <button id="btn-close-view" class="sns-modal-btn btn-purple" style="width: 80px; padding: 8px 12px;">닫기</button>
+        </div>
+      </div>
     </div>
   </div>
 
   <script src="src/lib/supabase.min.js"></script>
   <script src="src/utils/supabaseClient.js"></script>
+  <script src="src/utils/cloudflareClient.js"></script>
   <script src="src/utils/formatter.js"></script>
   <script src="src/utils/calculator.js"></script>
   <script src="src/utils/exporter.js"></script>
