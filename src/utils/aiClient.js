@@ -67,7 +67,7 @@
       throw new Error('Gemini API Key가 설정되지 않았습니다. 상단 입력창에 등록해 주세요.');
     }
 
-    const model = 'gemini-1.5-flash';
+    const model = 'gemini-1.5-flash-latest';
     const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
 
     const optionDescriptions = productData.options && productData.options.length > 0
