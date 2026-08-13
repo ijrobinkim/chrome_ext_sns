@@ -313,7 +313,7 @@
           name: 'salim_nam',
           avatar: 'salim_nam_avatar.jpg',
           email: 'hkthelife@gmail.com',
-          desc: '찾으시는 제품명 or 제품번호를 검색해보세요!\n짧게 입력해도 모두 뜹니다!\n\n✉️ hkthelife@gmail.com'
+          desc: '이 포스팅은 쿠팡 파트너스 및 토스쇼핑 쉐어링크 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.\n\n찾으시는 제품명 or 제품번호를 검색해보세요!\n짧게 입력해도 모두 뜹니다!\n\n✉️ hkthelife@gmail.com'
         };
       } else {
         activeProfile = {
@@ -321,7 +321,7 @@
           name: 'kkoolkkool',
           avatar: 'kkoolkkool_avatar.jpg',
           email: 'koolkool@naver.com',
-          desc: '이 포스팅은 쿠팡 파트너스 활동의 일환으로\n이에 따른 일정액의 수수료를 제공받습니다.'
+          desc: '이 포스팅은 쿠팡 파트너스 및 토스쇼핑 쉐어링크 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.'
         };
       }
 
@@ -405,10 +405,10 @@
         });
 
         // Set fallback thumbnail image or modern gradient placeholder if none exists
-        const thumbSrc = prod.thumbnail || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="70" height="70" viewBox="0 0 70 70"><rect width="70" height="70" fill="%23e5e7eb"/></svg>';
+        const thumbSrc = prod.thumbnail || 'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2270%22%20height%3D%2270%22%20viewBox%3D%220%200%2070%2070%22%3E%3Crect%20width%3D%2270%22%20height%3D%2270%22%20fill%3D%22%23e5e7eb%22%2F%3E%3C%2Fsvg%3E';
 
         card.innerHTML = `
-          <img class="product-thumb" src="${thumbSrc}" alt="Product Thumbnail" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2270%22 height=%2270%22 viewBox=%220 0 70 70%22><rect width=%2270%22 height=%2270%22 fill=%22%23e5e7eb%22/></svg>'">
+          <img class="product-thumb" src="${thumbSrc}" alt="Product Thumbnail" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2270%22%20height%3D%2270%22%20viewBox%3D%220%200%2070%2070%22%3E%3Crect%20width%3D%2270%22%20height%3D%2270%22%20fill%3D%22%23e5e7eb%22%2F%3E%3C%2Fsvg%3E';">
           <div class="product-info">
             <div class="product-title">${escapeHtml(prod.title)}</div>
           </div>

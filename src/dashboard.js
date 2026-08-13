@@ -126,15 +126,17 @@
           // 1. Fetch & Parse
           const productData = await window.RemoteParser.parseUrl(url);
 
+           const customLink = document.getElementById('remote-partners-link-input')?.value.trim() || '';
+
           // 2. Generate Blog Post
-          const blogResult = await window.AIBlogClient.generatePost(productData, 'review', url);
+          const blogResult = await window.AIBlogClient.generatePost(productData, 'review', customLink || url);
           const remoteBlogTitle = document.getElementById('remote-blog-title-result');
           const remoteBlogBody = document.getElementById('remote-blog-result');
           if (remoteBlogTitle) remoteBlogTitle.value = blogResult.title || '제목 없음';
           if (remoteBlogBody) remoteBlogBody.value = blogResult.body || '';
 
           // 3. Generate Threads Post
-          const threadsResult = await window.AIBlogClient.generateThreadsPost(productData, 'hook', url);
+          const threadsResult = await window.AIBlogClient.generateThreadsPost(productData, 'hook', customLink || url);
           const remoteThreadsMain = document.getElementById('remote-threads-main-result');
           const remoteThreadsReply = document.getElementById('remote-threads-reply-result');
           if (remoteThreadsMain) remoteThreadsMain.value = threadsResult.main || '';
@@ -151,7 +153,8 @@
             generatedBlogTitle: blogResult.title || '',
             generatedBlogBody: blogResult.body || '',
             generatedThreadsMain: threadsResult.main || '',
-            generatedThreadsReply: threadsResult.reply || ''
+            generatedThreadsReply: threadsResult.reply || '',
+            coupangPartnersLink: customLink
           };
 
           // Render Image Gallery
