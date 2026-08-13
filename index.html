@@ -363,7 +363,7 @@
                 if (parsed.isShopping) {
                   const title = parsed.title || '상품 정보';
                   const thumbnail = parsed.images && parsed.images.length > 0 ? parsed.images[0] : '';
-                  const link = parsed.coupangPartnersLink || parsed.link || '#';
+                  const link = parsed.coupangPartnersLink || parsed.link || item.link || '#';
                   
                   allProducts.push({
                     id: item.id,

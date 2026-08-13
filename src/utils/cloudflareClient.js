@@ -105,6 +105,7 @@
             let price = '-';
             let images = [];
             let options = [];
+            let link = item.link || '#';
             
             // Persisted AI texts
             let generatedBlogTitle = '';
@@ -137,6 +138,7 @@
                   generatedThreadsMain = parsed.generatedThreadsMain || '';
                   generatedThreadsReply = parsed.generatedThreadsReply || '';
                   coupangPartnersLink = parsed.coupangPartnersLink || '';
+                  link = parsed.coupangPartnersLink || parsed.link || link;
                 }
               } catch (e) {
                 console.warn('JSON parse error on post text:', e);
@@ -170,7 +172,7 @@
               author: item.author || '익명',
               content,
               price,
-              link: item.link || window.location.href,
+              link,
               images,
               options,
               views: item.views || 0,
@@ -246,13 +248,15 @@
             title: newPost.title,
             price: newPost.price || '-',
             seller: newPost.author,
+            link: newPost.link,
             images: newPost.images || [],
             options: [],
             content: newPost.content,
             generatedBlogTitle: newPostData.generatedBlogTitle || '',
             generatedBlogBody: newPostData.generatedBlogBody || '',
             generatedThreadsMain: newPostData.generatedThreadsMain || '',
-            generatedThreadsReply: newPostData.generatedThreadsReply || ''
+            generatedThreadsReply: newPostData.generatedThreadsReply || '',
+            coupangPartnersLink: newPostData.coupangPartnersLink || ''
           });
         }
         await global.supabaseClient.from('sns_metrics').insert([{
@@ -299,13 +303,14 @@
     if (global.supabaseClient) {
       try {
         let textValue = '';
-        if (updatedPost.category === 'shopping') {
+        if (updatedPost.category === 'shopping' || updatedPost.category === 'shopping_remote') {
           textValue = JSON.stringify({
             isShopping: true,
-            platform: updatedPost.categoryLabel.includes('네이버') ? 'naver' : 'coupang',
+            platform: updatedPost.category === 'shopping' ? (updatedPost.categoryLabel.includes('네이버') ? 'naver' : 'coupang') : 'shopping_remote',
             title: updatedPost.title,
             price: updatedPost.price,
             seller: updatedPost.author,
+            link: updatedPost.link,
             images: updatedPost.images,
             options: updatedPost.options,
             content: updatedPost.content,
