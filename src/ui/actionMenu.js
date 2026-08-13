@@ -240,6 +240,8 @@
       }
     }
 
+    const isNaver = productData.platform === 'naver';
+
     const overlay = document.createElement('div');
     overlay.id = 'sns-action-modal-overlay';
     overlay.className = 'sns-modal-overlay';
@@ -250,75 +252,16 @@
     // Header Title
     const title1 = document.createElement('div');
     title1.className = 'sns-modal-title';
-    title1.textContent = '🛒 쿠팡 상품 하드디스크 저장';
+    title1.textContent = isNaver ? '🛒 네이버 상품 수집 & 저장' : '🛒 쿠팡 상품 수집 & 저장';
     modal.appendChild(title1);
 
-    // 1. Download Images (Gradient Pill)
-    const imgBtn = createModalButton('🖼️ 대표·상세 이미지 다운로드', 'btn-gradient', () => {
-      if (global.SNSExporter && global.SNSExporter.downloadShoppingImages) {
-        global.SNSExporter.downloadShoppingImages(productData);
-      } else {
-        global.SNSExporter.showToast('⚠️ 이미지 다운로드 함수를 찾을 수 없습니다.');
-      }
-    });
-    modal.appendChild(imgBtn);
-
-    // 2. Save JSON (Purple Pill)
-    const jsonBtn = createModalButton('💾 상품 정보 JSON 저장', 'btn-purple', () => {
-      if (global.SNSExporter && global.SNSExporter.saveProductAsJSON) {
-        global.SNSExporter.saveProductAsJSON(productData);
-      }
-    });
-    modal.appendChild(jsonBtn);
-
-    // 3. Save TXT Summary (Purple Pill)
-    const txtBtn = createModalButton('📝 상품 개요 TXT 저장', 'btn-purple', () => {
-      if (global.SNSExporter && global.SNSExporter.saveProductAsTXT) {
-        global.SNSExporter.saveProductAsTXT(productData);
-      }
-    });
-    modal.appendChild(txtBtn);
-
-    // Section 2 Header: 데이터 내보내기 & 수집
-    const title2 = document.createElement('div');
-    title2.className = 'sns-modal-title sns-title-sub';
-    title2.textContent = '데이터 내보내기 & 복사';
-    modal.appendChild(title2);
-
-    // Dual buttons: CSV & Copy Link
-    const dualRow1 = document.createElement('div');
-    dualRow1.className = 'sns-dual-btn-row';
-
-    const csvBtn = createModalButton('📊 CSV 내보내기', 'btn-purple btn-half', () => {
-      if (global.SNSExporter && global.SNSExporter.saveProductAsCSV) {
-        global.SNSExporter.saveProductAsCSV(productData);
-      }
-    });
-    const copyLinkBtn = createModalButton('🔗 링크 복사', 'btn-purple btn-half', () => {
-      const link = productData.url || window.location.href;
-      global.SNSExporter.copyToClipboard(link, '🔗 상품 링크가 복사되었습니다!');
-    });
-
-    dualRow1.appendChild(csvBtn);
-    dualRow1.appendChild(copyLinkBtn);
-    modal.appendChild(dualRow1);
-
-    // Dual buttons: Copy Text & Save to Board (Supabase)
-    const dualRow2 = document.createElement('div');
-    dualRow2.className = 'sns-dual-btn-row';
-
-    const copyTextBtn = createModalButton('📋 텍스트 복사', 'btn-purple btn-half', () => {
-      const infoStr = `[${productData.title}]\n가격: ${productData.price}\n배송: ${productData.seller}\n링크: ${productData.url || window.location.href}`;
-      global.SNSExporter.copyToClipboard(infoStr, '📋 상품 핵심 정보가 복사되었습니다!');
-    });
-
-    const collectBtn = createModalButton('☁️ 수집함에 저장', 'btn-gradient btn-half', async () => {
+    // 1. [Top-level Full-width Highlight] Save to Board (Supabase)
+    const collectBtn = createModalButton('☁️ 수집함에 저장', 'btn-gradient', async () => {
       const dashboardUrl = safeGetURL('collected.html');
       if (!dashboardUrl) {
         alert('⚠️ 크롬 확장 프로그램의 연결이 해제되었거나 업데이트되었습니다.\n\n수집함을 정상적으로 열기 위해 이 브라우저 탭(쇼핑몰 페이지)을 [새로고침(F5)] 하신 뒤 다시 시도해 주세요!');
         return;
       }
-      const isNaver = productData.platform === 'naver';
       const defaultAuthor = isNaver ? 'Naver' : 'Coupang';
       const cardData = {
         author: productData.seller || defaultAuthor,
@@ -345,10 +288,90 @@
       global.SNSExporter.showToast(`✅ ${isNaver ? '네이버 쇼핑' : '쿠팡'} 상품이 수집함에 저장되었습니다!`);
       window.open(dashboardUrl, '_blank');
     });
+    modal.appendChild(collectBtn);
 
-    dualRow2.appendChild(copyTextBtn);
-    dualRow2.appendChild(collectBtn);
-    modal.appendChild(dualRow2);
+    // Section 2 Header: 하드디스크 로컬 저장
+    const title2 = document.createElement('div');
+    title2.className = 'sns-modal-title sns-title-sub';
+    title2.textContent = '💾 하드디스크 로컬 저장';
+    modal.appendChild(title2);
+
+    // Image Download Button (Full width)
+    const imgBtn = createModalButton('🖼️ 이미지 전체 다운로드', 'btn-purple', () => {
+      if (global.SNSExporter && global.SNSExporter.downloadShoppingImages) {
+        global.SNSExporter.downloadShoppingImages(productData);
+      } else {
+        global.SNSExporter.showToast('⚠️ 이미지 다운로드 함수를 찾을 수 없습니다.');
+      }
+    });
+    modal.appendChild(imgBtn);
+
+    // Side-by-side JSON & TXT saving
+    const localDualRow = document.createElement('div');
+    localDualRow.className = 'sns-dual-btn-row';
+
+    const jsonBtn = createModalButton('💾 JSON 저장', 'btn-purple btn-half', () => {
+      if (global.SNSExporter && global.SNSExporter.saveProductAsJSON) {
+        global.SNSExporter.saveProductAsJSON(productData);
+      }
+    });
+    const txtBtn = createModalButton('📝 TXT 저장', 'btn-purple btn-half', () => {
+      if (global.SNSExporter && global.SNSExporter.saveProductAsTXT) {
+        global.SNSExporter.saveProductAsTXT(productData);
+      }
+    });
+
+    localDualRow.appendChild(jsonBtn);
+    localDualRow.appendChild(txtBtn);
+    modal.appendChild(localDualRow);
+
+    // Section 3 Header: 데이터 내보내기 & 복사
+    const title3 = document.createElement('div');
+    title3.className = 'sns-modal-title sns-title-sub';
+    title3.textContent = '📋 데이터 내보내기 & 복사';
+    modal.appendChild(title3);
+
+    // Dual buttons: CSV & Copy Link
+    const dualRow1 = document.createElement('div');
+    dualRow1.className = 'sns-dual-btn-row';
+
+    const csvBtn = createModalButton('📊 CSV 내보내기', 'btn-purple btn-half', () => {
+      if (global.SNSExporter && global.SNSExporter.saveProductAsCSV) {
+        global.SNSExporter.saveProductAsCSV(productData);
+      }
+    });
+    const copyLinkBtn = createModalButton('🔗 링크 복사', 'btn-purple btn-half', () => {
+      const link = productData.url || window.location.href;
+      global.SNSExporter.copyToClipboard(link, '🔗 상품 링크가 복사되었습니다!');
+    });
+
+    dualRow1.appendChild(csvBtn);
+    dualRow1.appendChild(copyLinkBtn);
+    modal.appendChild(dualRow1);
+
+    // Full-width Text copy button
+    const copyTextBtn = createModalButton('📋 핵심 정보 텍스트 복사', 'btn-purple', () => {
+      const infoStr = `[${productData.title}]\n가격: ${productData.price}\n배송: ${productData.seller}\n링크: ${productData.url || window.location.href}`;
+      global.SNSExporter.copyToClipboard(infoStr, '📋 상품 핵심 정보가 복사되었습니다!');
+    });
+    modal.appendChild(copyTextBtn);
+
+    // Section 4 Header: 게시판 바로가기
+    const title4 = document.createElement('div');
+    title4.className = 'sns-modal-title sns-title-sub';
+    title4.textContent = '🖥️ 수집 게시판 바로가기';
+    modal.appendChild(title4);
+
+    // Full-width open dashboard button
+    const openBoardBtn = createModalButton('🖥️ 수집함 게시판 열기', 'btn-gradient', () => {
+      const dashboardUrl = safeGetURL('collected.html');
+      if (!dashboardUrl) {
+        alert('⚠️ 크롬 확장 프로그램의 연결이 해제되었거나 업데이트되었습니다.\n\n수집함을 정상적으로 열기 위해 이 브라우저 탭을 [새로고침(F5)] 하신 뒤 다시 시도해 주세요!');
+        return;
+      }
+      window.open(dashboardUrl, '_blank');
+    });
+    modal.appendChild(openBoardBtn);
 
     // Close Button (Red Circle ✕)
     const closeBtn = document.createElement('button');
