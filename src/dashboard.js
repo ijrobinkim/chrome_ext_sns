@@ -31,6 +31,380 @@
   }
 
   function bindEvents() {
+    // 0. Sidebar Navigation
+    const navBoard = document.getElementById('nav-board');
+    const navPublish = document.getElementById('nav-publish');
+    const navRemoteArchive = document.getElementById('nav-remote-archive');
+    const boardView = document.getElementById('board-view');
+    const publishView = document.getElementById('publish-view');
+
+    if (navBoard && navPublish && boardView && publishView) {
+      const resetNavActive = () => {
+        document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+      };
+
+      navBoard.addEventListener('click', async (e) => {
+        e.preventDefault();
+        resetNavActive();
+        navBoard.classList.add('active');
+        boardView.style.display = 'block';
+        publishView.style.display = 'none';
+        
+        // Reset category to show all
+        const catSelect = document.getElementById('filter-category');
+        if (catSelect) {
+          catSelect.value = 'all';
+          currentCategory = 'all';
+        }
+        await loadData();
+      });
+
+      navPublish.addEventListener('click', (e) => {
+        e.preventDefault();
+        resetNavActive();
+        navPublish.classList.add('active');
+        publishView.style.display = 'block';
+        boardView.style.display = 'none';
+      });
+
+      if (navRemoteArchive) {
+        navRemoteArchive.addEventListener('click', async (e) => {
+          e.preventDefault();
+          resetNavActive();
+          navRemoteArchive.classList.add('active');
+          boardView.style.display = 'block';
+          publishView.style.display = 'none';
+
+          // Auto filter to shopping_remote
+          const catSelect = document.getElementById('filter-category');
+          if (catSelect) {
+            catSelect.value = 'shopping_remote';
+            currentCategory = 'shopping_remote';
+          }
+          await loadData();
+        });
+      }
+    }
+
+    // 0.5. Remote Publish Logic
+    const btnFetchGenerate = document.getElementById('btn-fetch-generate');
+    if (btnFetchGenerate) {
+      btnFetchGenerate.addEventListener('click', async () => {
+        const btnSaveRemotePost = document.getElementById('btn-save-remote-post');
+        if (btnSaveRemotePost) {
+          btnSaveRemotePost.style.display = 'none';
+          btnSaveRemotePost.textContent = '💾 생성된 원고 수집함에 저장하기';
+          btnSaveRemotePost.disabled = false;
+        }
+
+        const urlInput = document.getElementById('remote-url-input');
+        const rawUrl = urlInput ? urlInput.value.trim() : '';
+        const urlMatch = rawUrl.match(/https?:\/\/[^\s]+/);
+        if (!urlMatch) {
+          alert('상품 링크를 입력해주세요. (예: https://toss.im/...)');
+          return;
+        }
+        const url = urlMatch[0];
+
+        const apiKey = window.AIBlogClient ? window.AIBlogClient.getGeminiKey() : '';
+        if (!apiKey) {
+          alert('⚠️ Google Gemini API Key가 설정되어 있지 않습니다. 보드 뷰에서 [새 글 작성/생성] 버튼을 눌러 API 키를 먼저 설정해주세요.');
+          return;
+        }
+
+        const statusText = document.getElementById('remote-status-text');
+        if (statusText) {
+          statusText.style.display = 'block';
+          statusText.textContent = '⏳ 링크를 분석하고 원고를 작성하는 중입니다... (최대 1~2분 소요)';
+          statusText.style.color = '#94a3b8';
+        }
+        btnFetchGenerate.disabled = true;
+
+        try {
+          if (!window.RemoteParser) throw new Error('RemoteParser 모듈을 불러올 수 없습니다.');
+          
+          // 1. Fetch & Parse
+          const productData = await window.RemoteParser.parseUrl(url);
+
+          // 2. Generate Blog Post
+          const blogResult = await window.AIBlogClient.generatePost(productData, 'review', url);
+          const remoteBlogTitle = document.getElementById('remote-blog-title-result');
+          const remoteBlogBody = document.getElementById('remote-blog-result');
+          if (remoteBlogTitle) remoteBlogTitle.value = blogResult.title || '제목 없음';
+          if (remoteBlogBody) remoteBlogBody.value = blogResult.body || '';
+
+          // 3. Generate Threads Post
+          const threadsResult = await window.AIBlogClient.generateThreadsPost(productData, 'hook', url);
+          const remoteThreadsMain = document.getElementById('remote-threads-main-result');
+          const remoteThreadsReply = document.getElementById('remote-threads-reply-result');
+          if (remoteThreadsMain) remoteThreadsMain.value = threadsResult.main || '';
+          if (remoteThreadsReply) remoteThreadsReply.value = threadsResult.reply || '';
+
+          // Store for saving later
+          window.lastGeneratedRemotePost = {
+            title: blogResult.title || '원격 발행 블로그 글',
+            category: 'shopping_remote',
+            author: productData.author || '익명',
+            content: `[블로그 제목]\n${blogResult.title}\n\n[블로그 본문]\n${blogResult.body}\n\n[스레드 본문]\n${threadsResult.main}\n\n[스레드 댓글]\n${threadsResult.reply}`,
+            link: url,
+            images: productData.images || [],
+            generatedBlogTitle: blogResult.title || '',
+            generatedBlogBody: blogResult.body || '',
+            generatedThreadsMain: threadsResult.main || '',
+            generatedThreadsReply: threadsResult.reply || ''
+          };
+
+          // Render Image Gallery
+          const imgContainer = document.getElementById('remote-images-container');
+          const imgGallery = document.getElementById('remote-images-gallery');
+          if (imgContainer && imgGallery) {
+            imgGallery.innerHTML = '';
+            if (productData.images && productData.images.length > 0) {
+              imgContainer.style.display = 'block';
+              productData.images.forEach(imgUrl => {
+                const imgEl = document.createElement('img');
+                imgEl.src = imgUrl;
+                imgEl.style.width = '100px';
+                imgEl.style.height = '100px';
+                imgEl.style.objectFit = 'cover';
+                imgEl.style.borderRadius = '8px';
+                imgEl.style.cursor = 'pointer';
+                imgEl.style.border = '2px solid #313244';
+                imgEl.style.transition = 'transform 0.2s';
+                imgEl.addEventListener('mouseenter', () => imgEl.style.transform = 'scale(1.05)');
+                imgEl.addEventListener('mouseleave', () => imgEl.style.transform = 'scale(1)');
+                
+                imgEl.addEventListener('click', () => {
+                  const lightbox = document.getElementById('image-lightbox');
+                  const lightboxImg = document.getElementById('lightbox-img');
+                  if (lightbox && lightboxImg) {
+                    lightboxImg.src = imgUrl;
+                    lightbox.style.display = 'flex';
+                    lightbox.dataset.currentUrl = imgUrl;
+                  }
+                });
+                imgGallery.appendChild(imgEl);
+              });
+            } else {
+              imgContainer.style.display = 'none';
+            }
+          }
+
+          if (statusText) {
+            statusText.textContent = '✅ 분석 완료 및 보관함에 자동으로 저장되었습니다!';
+            statusText.style.color = '#34d399';
+          }
+          
+          document.getElementById('btn-copy-remote-blog-title').style.display = 'inline-flex';
+          document.getElementById('btn-copy-remote-blog-body').style.display = 'inline-flex';
+          document.getElementById('btn-copy-remote-threads-main').style.display = 'inline-flex';
+          document.getElementById('btn-copy-remote-threads-reply').style.display = 'inline-flex';
+          
+          const btnSaveRemotePost = document.getElementById('btn-save-remote-post');
+          if (btnSaveRemotePost) {
+            btnSaveRemotePost.style.display = 'inline-flex';
+            btnSaveRemotePost.textContent = '✅ 보관함 자동 저장됨';
+            btnSaveRemotePost.disabled = true;
+          }
+
+          // Auto save to database/localStorage
+          if (window.CloudflareClient && typeof window.CloudflareClient.saveBoardPost === 'function') {
+            try {
+              const saved = await window.CloudflareClient.saveBoardPost(window.lastGeneratedRemotePost);
+              if (saved) {
+                window.lastGeneratedRemotePost.id = saved.id;
+              }
+              await loadData();
+            } catch (saveErr) {
+              console.warn('[AutoSave] Failed:', saveErr);
+            }
+          }
+
+        } catch (err) {
+          console.error(err);
+          alert('오류 발생: ' + err.message);
+          if (statusText) {
+            statusText.textContent = '❌ 분석 중 오류가 발생했습니다.';
+            statusText.style.color = '#ef4444';
+          }
+        } finally {
+          btnFetchGenerate.disabled = false;
+        }
+      });
+    }
+
+    const btnCopyRemoteBlogTitle = document.getElementById('btn-copy-remote-blog-title');
+    if (btnCopyRemoteBlogTitle) {
+      btnCopyRemoteBlogTitle.addEventListener('click', () => {
+        const text = document.getElementById('remote-blog-title-result').value;
+        navigator.clipboard.writeText(text).then(() => alert('📋 제목이 복사되었습니다!'));
+      });
+    }
+
+    const btnCopyRemoteBlogBody = document.getElementById('btn-copy-remote-blog-body');
+    if (btnCopyRemoteBlogBody) {
+      btnCopyRemoteBlogBody.addEventListener('click', () => {
+        const text = document.getElementById('remote-blog-result').value;
+        if (window.AIBlogClient) {
+          const htmlText = window.AIBlogClient.mdToHtml(text);
+          const blobHTML = new Blob([htmlText], { type: 'text/html' });
+          const blobText = new Blob([text], { type: 'text/plain' });
+          const data = [new ClipboardItem({ 'text/html': blobHTML, 'text/plain': blobText })];
+          navigator.clipboard.write(data).then(() => {
+            alert('✨ 서식이 유지된 블로그 본문이 복사되었습니다!');
+          }).catch(() => {
+            navigator.clipboard.writeText(text).then(() => alert('📋 마크다운 텍스트 복사로 대체되었습니다.'));
+          });
+        }
+      });
+    }
+
+    const btnCopyRemoteThreadsMain = document.getElementById('btn-copy-remote-threads-main');
+    if (btnCopyRemoteThreadsMain) {
+      btnCopyRemoteThreadsMain.addEventListener('click', () => {
+        const text = document.getElementById('remote-threads-main-result').value;
+        navigator.clipboard.writeText(text).then(() => alert('📋 스레드 본문이 복사되었습니다!'));
+      });
+    }
+
+    const btnCopyRemoteThreadsReply = document.getElementById('btn-copy-remote-threads-reply');
+    if (btnCopyRemoteThreadsReply) {
+      btnCopyRemoteThreadsReply.addEventListener('click', () => {
+        const text = document.getElementById('remote-threads-reply-result').value;
+        navigator.clipboard.writeText(text).then(() => alert('📋 스레드 타래가 복사되었습니다!'));
+      });
+    }
+
+    const btnSaveRemotePost = document.getElementById('btn-save-remote-post');
+    if (btnSaveRemotePost) {
+      btnSaveRemotePost.addEventListener('click', async () => {
+        if (!window.lastGeneratedRemotePost) {
+          alert('저장할 원고가 없습니다.');
+          return;
+        }
+        
+        const originalText = btnSaveRemotePost.textContent;
+        btnSaveRemotePost.textContent = '⏳ 저장 중...';
+        btnSaveRemotePost.disabled = true;
+        
+        try {
+          const blogTitle = document.getElementById('remote-blog-title-result').value;
+          const blogBody = document.getElementById('remote-blog-result').value;
+          const threadsMain = document.getElementById('remote-threads-main-result').value;
+          const threadsReply = document.getElementById('remote-threads-reply-result').value;
+
+          window.lastGeneratedRemotePost.title = blogTitle || '원격 발행 블로그 글';
+          window.lastGeneratedRemotePost.generatedBlogTitle = blogTitle;
+          window.lastGeneratedRemotePost.generatedBlogBody = blogBody;
+          window.lastGeneratedRemotePost.generatedThreadsMain = threadsMain;
+          window.lastGeneratedRemotePost.generatedThreadsReply = threadsReply;
+          window.lastGeneratedRemotePost.content = `[블로그 제목]\n${blogTitle}\n\n[블로그 본문]\n${blogBody}\n\n[스레드 본문]\n${threadsMain}\n\n[스레드 댓글]\n${threadsReply}`;
+
+          if (window.CloudflareClient) {
+            if (window.lastGeneratedRemotePost.id) {
+              // Update existing
+              await window.CloudflareClient.updateBoardPost(window.lastGeneratedRemotePost.id, window.lastGeneratedRemotePost);
+            } else {
+              // Create new
+              const saved = await window.CloudflareClient.saveBoardPost(window.lastGeneratedRemotePost);
+              if (saved) window.lastGeneratedRemotePost.id = saved.id;
+            }
+            alert('🎉 보관함에 변경 사항이 성공적으로 저장되었습니다!');
+            await loadData();
+            
+            btnSaveRemotePost.textContent = '✅ 보관함 자동 저장됨';
+            btnSaveRemotePost.disabled = true;
+          } else {
+            throw new Error('CloudflareClient is not available.');
+          }
+        } catch (err) {
+          console.error(err);
+          alert('저장 중 오류가 발생했습니다: ' + err.message);
+          btnSaveRemotePost.textContent = originalText;
+          btnSaveRemotePost.disabled = false;
+        }
+      });
+    }
+
+    // Input listeners to detect edits on remote publish fields
+    const remoteFields = [
+      'remote-blog-title-result',
+      'remote-blog-result',
+      'remote-threads-main-result',
+      'remote-threads-reply-result'
+    ];
+    remoteFields.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('input', () => {
+          if (btnSaveRemotePost && btnSaveRemotePost.disabled) {
+            btnSaveRemotePost.textContent = '💾 변경 사항 보관함에 저장';
+            btnSaveRemotePost.disabled = false;
+          }
+        });
+      }
+    });
+
+    // Lightbox Modal Listeners
+    const lightbox = document.getElementById('image-lightbox');
+    const btnCloseLightbox = document.getElementById('btn-close-lightbox');
+    const btnLightboxCopyLink = document.getElementById('btn-lightbox-copy-link');
+    const btnLightboxDownload = document.getElementById('btn-lightbox-download');
+
+    if (btnCloseLightbox && lightbox) {
+      btnCloseLightbox.addEventListener('click', () => {
+        lightbox.style.display = 'none';
+      });
+      lightbox.addEventListener('click', (e) => {
+        if (e.target === lightbox) {
+          lightbox.style.display = 'none';
+        }
+      });
+    }
+
+    if (btnLightboxCopyLink) {
+      btnLightboxCopyLink.addEventListener('click', () => {
+        const url = lightbox.dataset.currentUrl;
+        if (url) {
+          navigator.clipboard.writeText(url).then(() => alert('📋 이미지 원본 링크가 복사되었습니다!'));
+        }
+      });
+    }
+
+    if (btnLightboxDownload) {
+      btnLightboxDownload.addEventListener('click', async () => {
+        const url = lightbox.dataset.currentUrl;
+        if (!url) return;
+
+        const originalText = btnLightboxDownload.textContent;
+        btnLightboxDownload.textContent = '⏳ 다운로드 중...';
+        btnLightboxDownload.disabled = true;
+
+        try {
+          const response = await fetch(url);
+          if (!response.ok) throw new Error('네트워크 응답이 올바르지 않습니다.');
+          const blob = await response.blob();
+          
+          const filename = 'product_image_' + Date.now() + '.jpg';
+          const objectUrl = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = objectUrl;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          
+          document.body.removeChild(a);
+          URL.revokeObjectURL(objectUrl);
+        } catch (e) {
+          console.error(e);
+          alert('이미지 다운로드에 실패했습니다. (CORS 문제 또는 네트워크 오류)');
+        } finally {
+          btnLightboxDownload.textContent = originalText;
+          btnLightboxDownload.disabled = false;
+        }
+      });
+    }
+
     // 1. Status Tabs
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -399,8 +773,17 @@
     if (btnCloseBlog && modalBlog) {
       btnCloseBlog.addEventListener('click', () => {
         modalBlog.style.display = 'none';
-        // Return to view modal
-        if (modalView) modalView.style.display = 'flex';
+        const currentPost = allPosts.find(p => String(p.id) === String(activeViewingPostId));
+        if (currentPost && currentPost.category !== 'shopping_remote') {
+          if (modalView) modalView.style.display = 'flex';
+        }
+      });
+    }
+
+    const btnCloseBlogBottom = document.getElementById('btn-close-blog-bottom');
+    if (btnCloseBlogBottom && modalBlog) {
+      btnCloseBlogBottom.addEventListener('click', () => {
+        modalBlog.style.display = 'none';
       });
     }
 
@@ -409,7 +792,60 @@
       modalBlog.addEventListener('click', (e) => {
         if (e.target === modalBlog) {
           modalBlog.style.display = 'none';
-          if (modalView) modalView.style.display = 'flex';
+          const currentPost = allPosts.find(p => String(p.id) === String(activeViewingPostId));
+          if (currentPost && currentPost.category !== 'shopping_remote') {
+            if (modalView) modalView.style.display = 'flex';
+          }
+        }
+      });
+    }
+
+    // Save Changes button inside modal
+    const btnSaveModalChanges = document.getElementById('btn-save-modal-changes');
+    if (btnSaveModalChanges) {
+      btnSaveModalChanges.addEventListener('click', async () => {
+        if (!activeViewingPostId) return;
+
+        const originalText = btnSaveModalChanges.textContent;
+        btnSaveModalChanges.textContent = '⏳ 저장 중...';
+        btnSaveModalChanges.disabled = true;
+
+        try {
+          const blogTitle = document.getElementById('blog-result-title').value;
+          const blogBody = document.getElementById('blog-result-body').value;
+          const threadsMain = document.getElementById('threads-result-main').value;
+          const threadsReply = document.getElementById('threads-result-reply').value;
+          const customLink = document.getElementById('coupang-partners-link-input').value;
+
+          const currentPost = allPosts.find(p => String(p.id) === String(activeViewingPostId));
+          if (!currentPost) throw new Error('게시글을 찾을 수 없습니다.');
+
+          const updateData = {
+            generatedBlogTitle: blogTitle,
+            generatedBlogBody: blogBody,
+            generatedThreadsMain: threadsMain,
+            generatedThreadsReply: threadsReply,
+            coupangPartnersLink: customLink,
+            content: `[블로그 제목]\n${blogTitle}\n\n[블로그 본문]\n${blogBody}\n\n[스레드 본문]\n${threadsMain}\n\n[스레드 댓글]\n${threadsReply}`
+          };
+
+          if (window.CloudflareClient && typeof window.CloudflareClient.updateBoardPost === 'function') {
+            const updated = await window.CloudflareClient.updateBoardPost(activeViewingPostId, updateData);
+            if (updated) {
+              const idx = allPosts.findIndex(p => String(p.id) === String(activeViewingPostId));
+              if (idx !== -1) allPosts[idx] = updated;
+              alert('🎉 원고의 변경 사항이 보관함에 성공적으로 저장되었습니다!');
+              await loadData();
+            } else {
+              throw new Error('데이터베이스 업데이트 실패');
+            }
+          }
+        } catch (e) {
+          console.error(e);
+          alert('저장 중 오류가 발생했습니다: ' + e.message);
+        } finally {
+          btnSaveModalChanges.textContent = originalText;
+          btnSaveModalChanges.disabled = false;
         }
       });
     }
@@ -674,6 +1110,86 @@
     // Look up the freshest post reference from allPosts by ID to bypass stale render closures
     const latestPost = allPosts.find(p => String(p.id) === String(post.id)) || post;
     activeViewingPostId = latestPost.id;
+
+    if (latestPost.category === 'shopping_remote') {
+      const modalBlog = document.getElementById('modal-blog-generation');
+      if (modalBlog) {
+        modalBlog.style.display = 'flex';
+        
+        // Pre-populate custom link
+        const inputPartnersLink = document.getElementById('coupang-partners-link-input');
+        if (inputPartnersLink) {
+          inputPartnersLink.value = latestPost.coupangPartnersLink || latestPost.link || '';
+        }
+        
+        // Pre-populate Blog fields
+        const resultTitle = document.getElementById('blog-result-title');
+        const resultBody = document.getElementById('blog-result-body');
+        if (resultTitle) resultTitle.value = latestPost.generatedBlogTitle || '';
+        if (resultBody) resultBody.value = latestPost.generatedBlogBody || '';
+        
+        // Pre-populate Threads fields
+        const resultThreadsMain = document.getElementById('threads-result-main');
+        const resultThreadsReply = document.getElementById('threads-result-reply');
+        if (resultThreadsMain) resultThreadsMain.value = latestPost.generatedThreadsMain || '';
+        if (resultThreadsReply) resultThreadsReply.value = latestPost.generatedThreadsReply || '';
+
+        // Show/Hide copy buttons based on existing content
+        const btnCopyTitle = document.getElementById('btn-copy-blog-title');
+        const btnCopyHTML = document.getElementById('btn-copy-blog-html');
+        const btnCopyThreadsMain = document.getElementById('btn-copy-threads-main');
+        const btnCopyThreadsReply = document.getElementById('btn-copy-threads-reply');
+
+        if (btnCopyTitle) btnCopyTitle.style.display = latestPost.generatedBlogTitle ? 'inline-flex' : 'none';
+        if (btnCopyHTML) btnCopyHTML.style.display = latestPost.generatedBlogBody ? 'inline-flex' : 'none';
+        if (btnCopyThreadsMain) btnCopyThreadsMain.style.display = latestPost.generatedThreadsMain ? 'inline-flex' : 'none';
+        if (btnCopyThreadsReply) btnCopyThreadsReply.style.display = latestPost.generatedThreadsReply ? 'inline-flex' : 'none';
+
+        // Show Save changes button inside modal
+        const btnSaveModalChanges = document.getElementById('btn-save-modal-changes');
+        if (btnSaveModalChanges) btnSaveModalChanges.style.display = 'inline-flex';
+
+        // Render Images in modal gallery
+        const modalImgContainer = document.getElementById('modal-images-container');
+        const modalImgGallery = document.getElementById('modal-images-gallery');
+        if (modalImgContainer && modalImgGallery) {
+          modalImgGallery.innerHTML = '';
+          if (latestPost.images && latestPost.images.length > 0) {
+            modalImgContainer.style.display = 'block';
+            latestPost.images.forEach(imgUrl => {
+              const imgEl = document.createElement('img');
+              imgEl.src = imgUrl;
+              imgEl.style.width = '80px';
+              imgEl.style.height = '80px';
+              imgEl.style.objectFit = 'cover';
+              imgEl.style.borderRadius = '6px';
+              imgEl.style.cursor = 'pointer';
+              imgEl.style.border = '2px solid #313244';
+              imgEl.style.transition = 'transform 0.2s';
+              imgEl.addEventListener('mouseenter', () => imgEl.style.transform = 'scale(1.05)');
+              imgEl.addEventListener('mouseleave', () => imgEl.style.transform = 'scale(1)');
+              
+              imgEl.addEventListener('click', () => {
+                const lightbox = document.getElementById('image-lightbox');
+                const lightboxImg = document.getElementById('lightbox-img');
+                if (lightbox && lightboxImg) {
+                  lightboxImg.src = imgUrl;
+                  lightbox.style.display = 'flex';
+                  lightbox.dataset.currentUrl = imgUrl;
+                }
+              });
+              modalImgGallery.appendChild(imgEl);
+            });
+          } else {
+            modalImgContainer.style.display = 'none';
+          }
+        }
+
+        // Update History dropdowns
+        updateHistoryDropdowns(latestPost);
+        return;
+      }
+    }
     
     const modalView = document.getElementById('modal-view-post');
     if (!modalView) return;
@@ -755,7 +1271,13 @@
           img.style.cursor = 'zoom-in';
           img.title = '클릭하여 원본 보기';
           img.addEventListener('click', () => {
-            window.open(src, '_blank');
+            const lightbox = document.getElementById('image-lightbox');
+            const lightboxImg = document.getElementById('lightbox-img');
+            if (lightbox && lightboxImg) {
+              lightboxImg.src = src;
+              lightbox.style.display = 'flex';
+              lightbox.dataset.currentUrl = src;
+            }
           });
           imgsContainer.appendChild(img);
         });

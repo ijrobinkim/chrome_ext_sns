@@ -118,8 +118,13 @@
               try {
                 const parsed = JSON.parse(content);
                 if (parsed.isShopping) {
-                  category = 'shopping';
-                  categoryLabel = parsed.platform === 'naver' ? '🛒 네이버 쇼핑' : '🛒 쿠팡';
+                  if (parsed.platform === 'shopping_remote') {
+                    category = 'shopping_remote';
+                    categoryLabel = '📦 원격 발행 보관함';
+                  } else {
+                    category = 'shopping';
+                    categoryLabel = parsed.platform === 'naver' ? '🛒 네이버 쇼핑' : '🛒 쿠팡';
+                  }
                   title = parsed.title || title;
                   price = parsed.price || '-';
                   images = parsed.images || [];
@@ -173,6 +178,7 @@
               comments: item.comments || 0,
               status: 'published',
               createdAt: item.saved_at ? new Date(item.saved_at).toLocaleString('ko-KR') : new Date().toLocaleString('ko-KR'),
+              timestamp: item.saved_at ? new Date(item.saved_at).getTime() : Date.now(),
               
               // Persisted AI fields
               generatedBlogTitle,
@@ -191,6 +197,7 @@
           });
 
           posts = Array.from(postMap.values());
+          posts.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
           saveLocalPosts(posts);
         }
       } catch (err) {
@@ -217,7 +224,12 @@
       likes: 0,
       comments: 0,
       status: 'published',
-      createdAt: new Date().toLocaleString('ko-KR')
+      createdAt: new Date().toLocaleString('ko-KR'),
+      timestamp: Date.now(),
+      generatedBlogTitle: newPostData.generatedBlogTitle || '',
+      generatedBlogBody: newPostData.generatedBlogBody || '',
+      generatedThreadsMain: newPostData.generatedThreadsMain || '',
+      generatedThreadsReply: newPostData.generatedThreadsReply || ''
     };
 
     posts.unshift(newPost);
@@ -227,16 +239,20 @@
     if (global.supabaseClient) {
       try {
         let textValue = `[${newPost.title}] ${newPost.content}`;
-        if (newPost.category === 'shopping') {
+        if (newPost.category === 'shopping' || newPost.category === 'shopping_remote') {
           textValue = JSON.stringify({
             isShopping: true,
-            platform: 'coupang',
+            platform: newPost.category === 'shopping' ? 'coupang' : 'shopping_remote',
             title: newPost.title,
             price: newPost.price || '-',
             seller: newPost.author,
             images: newPost.images || [],
             options: [],
-            content: newPost.content
+            content: newPost.content,
+            generatedBlogTitle: newPostData.generatedBlogTitle || '',
+            generatedBlogBody: newPostData.generatedBlogBody || '',
+            generatedThreadsMain: newPostData.generatedThreadsMain || '',
+            generatedThreadsReply: newPostData.generatedThreadsReply || ''
           });
         }
         await global.supabaseClient.from('sns_metrics').insert([{
@@ -320,6 +336,7 @@
   function getCategoryLabel(cat) {
     switch (cat) {
       case 'shopping': return '🛒 쿠팡/쇼핑';
+      case 'shopping_remote': return '📦 원격 발행 보관함';
       case 'sns': return '📢 스레드/SNS';
       case 'trend': return '🔥 트렌드';
       case 'general': default: return '💬 자유게시판';

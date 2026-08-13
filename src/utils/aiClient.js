@@ -79,7 +79,7 @@
 
     const affiliateLink = customLink.trim() || productData.link || '#';
     const imageUrls = productData.images && productData.images.length > 0
-      ? productData.images.slice(0, 5) // Use up to 5 main images
+      ? productData.images.slice(0, 10) // Use up to 10 main images
       : [];
 
     let imageInstruction = '';
@@ -93,6 +93,11 @@ ${imageUrls.map((url, idx) => `- 이미지 ${idx + 1}: ${url}`).join('\n')}
 이미지 설명(alt text)은 검색 노출에 도움되도록 해당 이미지에 어울리는 풍부한 한국어 설명으로 적어주세요. 반드시 제공된 실제 URL만 정확히 사용해야 합니다.
 `;
     }
+
+    const isToss = productData.platform === 'toss' || (affiliateLink && affiliateLink.includes('toss.im'));
+    const disclosureText = isToss 
+      ? "이 포스팅은 토스쇼핑 쉐어링크 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다."
+      : "이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.";
 
     const systemPrompt = `
 당신은 20년 경력의 전문 블로거이자 SEO/AEO/GEO 전문가, 그리고 SNS 마케팅 카피라이팅 전문가입니다. 제공된 상품 정보를 분석하여 고전환율을 이끌어내는 글을 작성하세요.
@@ -115,7 +120,7 @@ ${imageUrls.map((url, idx) => `- 이미지 ${idx + 1}: ${url}`).join('\n')}
 - 실제 사람이 쓴 내돈내산 찐후기 느낌을 살리기 위해, 1~2가지의 아쉬운 단점을 명확히 짚은 후 '하지만 이런 단점은 ~한 방법이나 실전 팁으로 쉽게 극복할 수 있습니다' 라는 극복 방안을 반드시 덧붙이세요.
 - 본문 중간이나 하단에 '구매 전 스마트 체크' 또는 '실수를 줄이는 스마트 팁' 등 독창적인 노하우를 담은 스마트 팁 섹션을 포함시킵니다.
 - **제휴 수수료 안내 문구 규칙**: 반드시 전체 본문 내용의 맨 아래 마지막([BLOGSPOT_END] 바로 직전)에 가운데 정렬(Center)로 작성하고, 다른 폰트 스타일을 적용하세요. (예: 11px 크기, 옅은 회색 #888888, 이탤릭체, 본문 서체와 구분되는 서체 적용). HTML 예시:
-  <p style="text-align: center; font-size: 11px; color: #888888; font-style: italic; font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif; margin-top: 30px;">이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.</p>
+  <p style="text-align: center; font-size: 11px; color: #888888; font-style: italic; font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif; margin-top: 30px;">${disclosureText}</p>
 - **제품 구매 링크 규칙**: 제휴 수수료 안내 문구 바로 위에는 클릭하여 제품 상세 정보나 후기 페이지로 넘어가고 싶게 만드는 매력적이고 직관적인 버튼형 제품 링크를 반드시 삽입해 주세요. HTML 예시:
   <div style="text-align: center; margin-top: 30px; margin-bottom: 15px;"><a href="${affiliateLink}" target="_blank" style="display: inline-block; padding: 12px 24px; background: #7c3aed; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.15);">▶ [제품명] 특가 혜택 및 상세 정보 확인하러 가기</a></div>
 
@@ -126,7 +131,8 @@ ${imageUrls.map((url, idx) => `- 이미지 ${idx + 1}: ${url}`).join('\n')}
 - story: 친근한 수다방 형식의 솔직 담백 사용기 스토리텔링
 
 [공통 링크 규칙 및 기타]
-- **본문 중간 링크 삽입**: 글의 전개 흐름상 어색하지 않게 본문 중간 부분(예: 핵심 기능 장점 소개부, 혹은 스펙 비교 후기부 등)에 제휴 링크(${affiliateLink})를 1~2회 정도 자연스럽게 삽입하세요. HTML <a> 태그를 활용해 문맥과 어우러지게 문장 내에 텍스트 링크로 넣어주세요. (예: "더 자세한 후기와 추가 스펙은 <a href="${affiliateLink}" target="_blank">이곳 공식 상세페이지</a>에서 바로 보실 수 있습니다.")
+- **본문 중간 제품 링크 필수 삽입**: 독자의 구매 전환율을 높이기 위해, 글의 전개 흐름상 가장 설득력이 높아지는 중간 부분(예: 핵심 스펙 설명 직후, 극복 팁 소개 후)에 제휴 링크(${affiliateLink})를 눈에 띄는 박스/버튼 형태로 최소 1~2회 삽입하세요. HTML <a> 태그를 활용하되 시선을 끄는 스타일을 적용하세요. 예시:
+  <div style="text-align: center; margin: 25px 0;"><a href="${affiliateLink}" target="_blank" style="display: inline-block; padding: 10px 22px; background: #3b82f6; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">👉 지금 바로 [제품명] 할인가 확인하기</a></div>
 - **링크 변조 금지**: 전달된 쿠팡 공식 숏링크(${affiliateLink})만을 변조나 환각 없이 정확하게 출력하세요. HTML <a> 태그를 사용해야 합니다.
 ${imageInstruction}
 `;
@@ -215,6 +221,15 @@ ${productData.content}
 
     const affiliateLink = customLink.trim() || productData.link || '#';
 
+    const imageUrls = productData.images && productData.images.length > 0
+      ? productData.images.slice(0, 10) // Use up to 10 main images
+      : [];
+
+    const isToss = productData.platform === 'toss' || (affiliateLink && affiliateLink.includes('toss.im'));
+    const disclosureText = isToss 
+      ? "이 포스팅은 토스쇼핑 쉐어링크 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다."
+      : "이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.";
+
     const systemPrompt = `
 당신은 20년 경력의 전문 블로거이자 SEO/AEO/GEO 전문가, 그리고 SNS 마케팅 카피라이팅 전문가입니다. 제공된 상품 정보를 분석하여 고전환율을 이끌어내는 글을 작성하세요.
 철저히 기계적인 번역투나 딱딱한 인공지능 말투(예: '도움이 되셨길 바랍니다', '이상으로', '자, 시작해볼까요?' 등)를 금지하고, 실제 이웃이 써보고 친근하게 추천해주는 듯한 구어체로 작성하세요.
@@ -241,7 +256,7 @@ ${productData.content}
 
 [스레드 댓글/타래 작성 규칙]
 1. 최상단 공정위 문구 의무 결합: 반드시 첫 줄에 다음 문구를 토씨 하나 틀리지 말고 정확하게 배치하세요:
-"이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다."
+"${disclosureText}"
 2. 한 줄 후킹 요약: 그 바로 아래에 제품에 대한 한 줄 후킹 요약을 작성하세요.
 3. 제휴 단축 링크: 맨 끝에 반드시 전달된 공식 숏링크(${affiliateLink})만을 변조나 환각 없이 정확하게 출력하세요.
 `;

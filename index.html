@@ -2,49 +2,462 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="refresh" content="0; url=collected.html" />
-  <title>스레드 데이터 보드 - 이동 중</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>링크 보관함</title>
+  
+  <!-- CSS Variables & Base Styles -->
   <style>
+    :root {
+      --bg-color: #f3f4f6;
+      --card-bg: #ffffff;
+      --text-main: #1f2937;
+      --text-muted: #6b7280;
+      --primary-color: #4f46e5;
+      --border-color: #e5e7eb;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background-color: #0f172a;
-      color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
       display: flex;
       justify-content: center;
+      min-height: 100vh;
+      padding: 20px 16px;
+    }
+
+    /* Page Container restricted to standard Mobile view */
+    .profile-container {
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
       align-items: center;
-      height: 100vh;
-      margin: 0;
     }
-    .redirect-box {
+
+    /* Top Action Icons */
+    .top-actions {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+
+    .action-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      transition: transform 0.2s;
+    }
+
+    .action-btn:hover {
+      transform: scale(1.05);
+    }
+
+    /* Profile Info Section */
+    .profile-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 24px;
       text-align: center;
-      padding: 2rem;
-      border-radius: 12px;
-      background: rgba(30, 41, 59, 0.7);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+      width: 100%;
     }
-    h1 {
-      font-size: 1.5rem;
-      margin-bottom: 1rem;
+
+    .profile-avatar-wrapper {
+      position: relative;
+      margin-bottom: 16px;
     }
-    p {
-      color: #94a3b8;
+
+    .profile-avatar {
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid #ffffff;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     }
-    a {
-      color: #38bdf8;
+
+    .profile-name {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-bottom: 12px;
+      letter-spacing: -0.025em;
+    }
+
+    .business-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-main);
       text-decoration: none;
-      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+      transition: background 0.2s, transform 0.2s;
     }
-    a:hover {
-      text-decoration: underline;
+
+    .business-btn:hover {
+      background: #f9fafb;
+      transform: translateY(-1px);
+    }
+
+    /* Live Search Input */
+    .search-wrapper {
+      width: 100%;
+      position: relative;
+      margin-bottom: 20px;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 14px 16px 14px 44px;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      font-size: 14px;
+      color: var(--text-main);
+      outline: none;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+      transition: border-color 0.2s;
+    }
+
+    .search-input:focus {
+      border-color: #cbd5e1;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 16px;
+      pointer-events: none;
+    }
+
+    /* FTC Disclosure Notice Box */
+    .disclosure-box {
+      width: 100%;
+      background: rgba(243, 244, 246, 0.5);
+      border: 1px dashed #d1d5db;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 11px;
+      line-height: 1.5;
+      color: var(--text-muted);
+      text-align: center;
+      margin-bottom: 24px;
+      white-space: pre-line;
+    }
+
+    /* Product Cards List */
+    .product-list {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .product-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      cursor: pointer;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .product-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
+    }
+
+    .product-thumb {
+      width: 70px;
+      height: 70px;
+      border-radius: 12px;
+      object-fit: cover;
+      background: #f3f4f6;
+      flex-shrink: 0;
+    }
+
+    .product-info {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      padding-right: 12px;
+    }
+
+    .product-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-main);
+      text-align: center;
+      line-height: 1.4;
+    }
+
+    /* Loading / Empty States */
+    .status-msg {
+      padding: 40px 0;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 480px) {
+      body {
+        padding: 12px 8px;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="redirect-box">
-    <h1>대시보드로 이동하고 있습니다...</h1>
-    <p>자동으로 이동하지 않으면 <a href="collected.html">여기</a>를 클릭하세요.</p>
+
+  <div class="profile-container">
+    <!-- Top Action Icons -->
+    <div class="top-actions">
+      <div class="action-btn" onclick="shareProfile()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+          <polyline points="16 6 12 2 8 6"></polyline>
+          <line x1="12" y1="2" x2="12" y2="15"></line>
+        </svg>
+      </div>
+      <div class="action-btn" onclick="alert('알림 설정이 활성화되었습니다.')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+          <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Profile Header Info -->
+    <div class="profile-header">
+      <div class="profile-avatar-wrapper">
+        <img id="profile-img" class="profile-avatar" src="kkoolkkool_avatar.jpg" alt="Profile Avatar">
+      </div>
+      <div id="profile-name" class="profile-name">kkoolkkool</div>
+      <a id="business-link" class="business-btn" href="mailto:koolkool@naver.com">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+          <polyline points="22,6 12,13 2,6"></polyline>
+        </svg>
+        <span>비즈니스 제안</span>
+      </a>
+    </div>
+
+    <!-- Live Search Input -->
+    <div class="search-wrapper">
+      <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <input type="text" id="search-input" class="search-input" placeholder="검색어를 입력해주세요.">
+    </div>
+
+    <!-- FTC Disclosure Notice -->
+    <div id="disclosure-text" class="disclosure-box">
+      이 포스팅은 쿠팡 파트너스 활동의 일환으로
+      이에 따른 일정액의 수수료를 제공받습니다.
+    </div>
+
+    <!-- Product List -->
+    <div id="product-list" class="product-list">
+      <div class="status-msg">상품 정보를 불러오는 중입니다...</div>
+    </div>
   </div>
+
+  <!-- Load Supabase Dependencies -->
+  <script src="src/lib/supabase.min.js"></script>
+  <script src="src/utils/supabaseClient.js"></script>
+
+  <!-- Client-side Logic -->
+  <script>
+    let allProducts = [];
+    let activeProfile = {};
+
+    // 1. Detect profile configurations dynamically
+    function configureProfile() {
+      const url = window.location.href.toLowerCase();
+      
+      // Determine if current profile matches salim_nam or default kkoolkkool
+      if (url.includes('salim') || url.includes('salim_nam')) {
+        activeProfile = {
+          key: 'salim_nam',
+          name: 'salim_nam',
+          avatar: 'salim_nam_avatar.jpg',
+          email: 'hkthelife@gmail.com',
+          desc: '찾으시는 제품명 or 제품번호를 검색해보세요!\n짧게 입력해도 모두 뜹니다!\n\n✉️ hkthelife@gmail.com'
+        };
+      } else {
+        activeProfile = {
+          key: 'kkoolkkool',
+          name: 'kkoolkkool',
+          avatar: 'kkoolkkool_avatar.jpg',
+          email: 'koolkool@naver.com',
+          desc: '이 포스팅은 쿠팡 파트너스 활동의 일환으로\n이에 따른 일정액의 수수료를 제공받습니다.'
+        };
+      }
+
+      // Update HTML profile elements
+      document.title = `${activeProfile.name} - 링크 보관함`;
+      document.getElementById('profile-img').src = activeProfile.avatar;
+      document.getElementById('profile-name').textContent = activeProfile.name;
+      document.getElementById('business-link').href = `mailto:${activeProfile.email}`;
+      document.getElementById('disclosure-text').textContent = activeProfile.desc;
+    }
+
+    // 2. Fetch Board posts from Supabase database
+    async function loadSupabaseProducts() {
+      const listContainer = document.getElementById('product-list');
+      
+      if (!window.supabaseClient) {
+        listContainer.innerHTML = '<div class="status-msg">⚠️ 데이터베이스 구성에 실패했습니다.</div>';
+        return;
+      }
+
+      try {
+        const { data, error } = await window.supabaseClient
+          .from('sns_metrics')
+          .select('*')
+          .order('saved_at', { ascending: false });
+
+        if (error) throw error;
+
+        allProducts = [];
+
+        if (data && data.length > 0) {
+          data.forEach(item => {
+            const content = item.text || '';
+            
+            // Check if post text is JSON-serialized product metadata
+            if (content.trim().startsWith('{') && content.trim().endsWith('}')) {
+              try {
+                const parsed = JSON.parse(content);
+                if (parsed.isShopping) {
+                  const title = parsed.title || '상품 정보';
+                  const thumbnail = parsed.images && parsed.images.length > 0 ? parsed.images[0] : '';
+                  const link = parsed.coupangPartnersLink || parsed.link || '#';
+                  
+                  allProducts.push({
+                    id: item.id,
+                    title: title,
+                    thumbnail: thumbnail,
+                    link: link,
+                    savedAt: item.saved_at
+                  });
+                }
+              } catch (err) {
+                console.warn('JSON parse warning:', err);
+              }
+            }
+          });
+        }
+
+        renderProducts(allProducts);
+      } catch (err) {
+        console.error('Fetch error:', err);
+        listContainer.innerHTML = '<div class="status-msg">⚠️ 목록을 불러오는 과정에서 오류가 발생했습니다.</div>';
+      }
+    }
+
+    // 3. Render filtered items to the page list
+    function renderProducts(productsList) {
+      const listContainer = document.getElementById('product-list');
+      listContainer.innerHTML = '';
+
+      if (productsList.length === 0) {
+        listContainer.innerHTML = '<div class="status-msg">등록된 상품 정보가 없습니다.</div>';
+        return;
+      }
+
+      productsList.forEach(prod => {
+        const card = document.createElement('div');
+        card.className = 'product-card';
+        card.addEventListener('click', () => {
+          window.open(prod.link, '_blank');
+        });
+
+        // Set fallback thumbnail image or modern gradient placeholder if none exists
+        const thumbSrc = prod.thumbnail || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="70" height="70" viewBox="0 0 70 70"><rect width="70" height="70" fill="%23e5e7eb"/></svg>';
+
+        card.innerHTML = `
+          <img class="product-thumb" src="${thumbSrc}" alt="Product Thumbnail" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2270%22 height=%2270%22 viewBox=%220 0 70 70%22><rect width=%2270%22 height=%2270%22 fill=%22%23e5e7eb%22/></svg>'">
+          <div class="product-info">
+            <div class="product-title">${escapeHtml(prod.title)}</div>
+          </div>
+        `;
+        listContainer.appendChild(card);
+      });
+    }
+
+    // Utility escape HTML function
+    function escapeHtml(str) {
+      return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    // 4. Live Search Filter handler
+    document.getElementById('search-input').addEventListener('input', (e) => {
+      const query = e.target.value.toLowerCase().trim();
+      if (!query) {
+        renderProducts(allProducts);
+        return;
+      }
+
+      const filtered = allProducts.filter(p => 
+        p.title.toLowerCase().includes(query)
+      );
+      renderProducts(filtered);
+    });
+
+    // Share Profile navigator API or fallback clipboard write
+    function shareProfile() {
+      if (navigator.share) {
+        navigator.share({
+          title: `${activeProfile.name} - 링크 보관함`,
+          url: window.location.href
+        }).catch(err => console.log('Share canceled'));
+      } else {
+        navigator.clipboard.writeText(window.location.href).then(() => {
+          alert('📋 프로필 링크 주소가 클립보드에 복사되었습니다!');
+        });
+      }
+    }
+
+    // Initialization
+    configureProfile();
+    loadSupabaseProducts();
+  </script>
 </body>
 </html>

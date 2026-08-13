@@ -19,8 +19,13 @@
     "https://*.xiaohongshu.com/*",
     "https://coupang.com/*",
     "https://*.coupang.com/*",
+    "https://*.coupangcdn.com/*",
     "https://smartstore.naver.com/*",
-    "https://*.smartstore.naver.com/*"
+    "https://*.smartstore.naver.com/*",
+    "https://toss.im/*",
+    "https://*.toss.im/*",
+    "https://toss.shopping/*",
+    "https://*.toss.shopping/*"
   ],
   "content_scripts": [
     {
@@ -38,7 +43,11 @@
         "https://coupang.com/*",
         "https://*.coupang.com/*",
         "https://smartstore.naver.com/*",
-        "https://*.smartstore.naver.com/*"
+        "https://*.smartstore.naver.com/*",
+        "https://toss.im/*",
+        "https://*.toss.im/*",
+        "https://toss.shopping/*",
+        "https://*.toss.shopping/*"
       ],
       "js": [
         "src/lib/supabase.min.js",
@@ -92,7 +101,11 @@
         "https://coupang.com/*",
         "https://*.coupang.com/*",
         "https://smartstore.naver.com/*",
-        "https://*.smartstore.naver.com/*"
+        "https://*.smartstore.naver.com/*",
+        "https://toss.im/*",
+        "https://*.toss.im/*",
+        "https://toss.shopping/*",
+        "https://*.toss.shopping/*"
       ]
     }
   ],
