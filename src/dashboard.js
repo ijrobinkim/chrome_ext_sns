@@ -6,7 +6,7 @@
 
   let allPosts = [];
   let currentFilterStatus = 'all';
-  let currentCategory = 'all';
+  let currentCategory = 'sns';
   let currentSearchKeyword = '';
   let currentLayoutMode = 'list'; // 'list' | 'grid'
   let activeViewingPostId = null;
@@ -32,6 +32,7 @@
 
   function bindEvents() {
     // 0. Sidebar Navigation
+    const navShopping = document.getElementById('nav-shopping');
     const navBoard = document.getElementById('nav-board');
     const navPublish = document.getElementById('nav-publish');
     const navRemoteArchive = document.getElementById('nav-remote-archive');
@@ -43,6 +44,23 @@
         document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
       };
 
+      if (navShopping) {
+        navShopping.addEventListener('click', async (e) => {
+          e.preventDefault();
+          resetNavActive();
+          navShopping.classList.add('active');
+          boardView.style.display = 'block';
+          publishView.style.display = 'none';
+
+          const catSelect = document.getElementById('filter-category');
+          if (catSelect) {
+            catSelect.value = 'shopping';
+            currentCategory = 'shopping';
+          }
+          await loadData();
+        });
+      }
+
       navBoard.addEventListener('click', async (e) => {
         e.preventDefault();
         resetNavActive();
@@ -50,11 +68,10 @@
         boardView.style.display = 'block';
         publishView.style.display = 'none';
         
-        // Reset category to show all
         const catSelect = document.getElementById('filter-category');
         if (catSelect) {
-          catSelect.value = 'all';
-          currentCategory = 'all';
+          catSelect.value = 'sns';
+          currentCategory = 'sns';
         }
         await loadData();
       });
@@ -75,7 +92,6 @@
           boardView.style.display = 'block';
           publishView.style.display = 'none';
 
-          // Auto filter to shopping_remote
           const catSelect = document.getElementById('filter-category');
           if (catSelect) {
             catSelect.value = 'shopping_remote';
