@@ -27,7 +27,7 @@
     } catch (e) {
       console.warn('[SNS Metric Overlay] Extension context invalidated:', e);
     }
-    return path;
+    return ''; // Return empty string to prevent relative path resolution on 3rd-party domains
   }
 
   function openActionModal(card, cardData) {
@@ -55,6 +55,10 @@
     // Button 1: 수집하기 (Gradient Pill) - Supabase 저장 및 보드 이동
     const collectBtn = createModalButton('수집하기', 'btn-gradient', async () => {
       const dashboardUrl = safeGetURL('collected.html');
+      if (!dashboardUrl) {
+        alert('⚠️ 크롬 확장 프로그램의 연결이 해제되었거나 업데이트되었습니다.\n\n수집함을 정상적으로 열기 위해 이 브라우저 탭을 [새로고침(F5)] 하신 뒤 다시 시도해 주세요!');
+        return;
+      }
 
       if (global.SNSExporter && global.SNSExporter.saveToSupabase) {
         await global.SNSExporter.saveToSupabase(cardData);
@@ -310,6 +314,10 @@
 
     const collectBtn = createModalButton('☁️ 수집함에 저장', 'btn-gradient btn-half', async () => {
       const dashboardUrl = safeGetURL('collected.html');
+      if (!dashboardUrl) {
+        alert('⚠️ 크롬 확장 프로그램의 연결이 해제되었거나 업데이트되었습니다.\n\n수집함을 정상적으로 열기 위해 이 브라우저 탭(쇼핑몰 페이지)을 [새로고침(F5)] 하신 뒤 다시 시도해 주세요!');
+        return;
+      }
       const isNaver = productData.platform === 'naver';
       const defaultAuthor = isNaver ? 'Naver' : 'Coupang';
       const cardData = {
