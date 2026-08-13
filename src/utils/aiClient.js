@@ -114,7 +114,10 @@ ${imageUrls.map((url, idx) => `- 이미지 ${idx + 1}: ${url}`).join('\n')}
 - 상품의 상세 스펙, 장점, 단점을 일목요연하게 파악할 수 있는 깔끔한 HTML <table>(표) 구조를 포함시킵니다.
 - 실제 사람이 쓴 내돈내산 찐후기 느낌을 살리기 위해, 1~2가지의 아쉬운 단점을 명확히 짚은 후 '하지만 이런 단점은 ~한 방법이나 실전 팁으로 쉽게 극복할 수 있습니다' 라는 극복 방안을 반드시 덧붙이세요.
 - 본문 중간이나 하단에 '구매 전 스마트 체크' 또는 '실수를 줄이는 스마트 팁' 등 독창적인 노하우를 담은 스마트 팁 섹션을 포함시킵니다.
-- 제휴 수수료 안내 문구와 정보 가변성에 따른 면책 문구는 포스팅 최상단 첫 문단으로 먼저 노출합니다. ("이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.")
+- **제휴 수수료 안내 문구 규칙**: 반드시 전체 본문 내용의 맨 아래 마지막([BLOGSPOT_END] 바로 직전)에 가운데 정렬(Center)로 작성하고, 다른 폰트 스타일을 적용하세요. (예: 11px 크기, 옅은 회색 #888888, 이탤릭체, 본문 서체와 구분되는 서체 적용). HTML 예시:
+  <p style="text-align: center; font-size: 11px; color: #888888; font-style: italic; font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif; margin-top: 30px;">이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.</p>
+- **제품 구매 링크 규칙**: 제휴 수수료 안내 문구 바로 위에는 클릭하여 제품 상세 정보나 후기 페이지로 넘어가고 싶게 만드는 매력적이고 직관적인 버튼형 제품 링크를 반드시 삽입해 주세요. HTML 예시:
+  <div style="text-align: center; margin-top: 30px; margin-bottom: 15px;"><a href="${affiliateLink}" target="_blank" style="display: inline-block; padding: 12px 24px; background: #7c3aed; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.15);">▶ [제품명] 특가 혜택 및 상세 정보 확인하러 가기</a></div>
 
 [블로그 스타일 지정]
 현재 선택된 작문 스타일은 [${style}] 입니다.
@@ -123,7 +126,7 @@ ${imageUrls.map((url, idx) => `- 이미지 ${idx + 1}: ${url}`).join('\n')}
 - story: 친근한 수다방 형식의 솔직 담백 사용기 스토리텔링
 
 [공통 링크 규칙 및 기타]
-- 링크 삽입 시 반드시 전달된 쿠팡 공식 숏링크(${affiliateLink})만을 변조나 환각 없이 정확하게 출력하세요. HTML <a> 태그를 사용하세요. (예: <a href="${affiliateLink}" target="_blank">[상품명] 특가 확인하기</a>)
+- 링크 삽입 시 반드시 전달된 쿠팡 공식 숏링크(${affiliateLink})만을 변조나 환각 없이 정확하게 출력하세요. HTML <a> 태그를 사용하세요.
 ${imageInstruction}
 `;
 
