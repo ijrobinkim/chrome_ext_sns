@@ -113,6 +113,7 @@
             let generatedThreadsMain = '';
             let generatedThreadsReply = '';
             let coupangPartnersLink = '';
+            let showOnLanding = true;
 
             // Detect if item.text is JSON-serialized shopping metadata
             if (content.trim().startsWith('{') && content.trim().endsWith('}')) {
@@ -139,6 +140,7 @@
                   generatedThreadsReply = parsed.generatedThreadsReply || '';
                   coupangPartnersLink = parsed.coupangPartnersLink || '';
                   link = parsed.coupangPartnersLink || parsed.link || link;
+                  showOnLanding = parsed.showOnLanding !== false;
                 }
               } catch (e) {
                 console.warn('JSON parse error on post text:', e);
@@ -187,7 +189,8 @@
               generatedBlogBody,
               generatedThreadsMain,
               generatedThreadsReply,
-              coupangPartnersLink
+              coupangPartnersLink,
+              showOnLanding
             };
           });
 
@@ -231,7 +234,8 @@
       generatedBlogTitle: newPostData.generatedBlogTitle || '',
       generatedBlogBody: newPostData.generatedBlogBody || '',
       generatedThreadsMain: newPostData.generatedThreadsMain || '',
-      generatedThreadsReply: newPostData.generatedThreadsReply || ''
+      generatedThreadsReply: newPostData.generatedThreadsReply || '',
+      showOnLanding: newPostData.showOnLanding !== false
     };
 
     posts.unshift(newPost);
@@ -256,7 +260,8 @@
             generatedBlogBody: newPostData.generatedBlogBody || '',
             generatedThreadsMain: newPostData.generatedThreadsMain || '',
             generatedThreadsReply: newPostData.generatedThreadsReply || '',
-            coupangPartnersLink: newPostData.coupangPartnersLink || ''
+            coupangPartnersLink: newPostData.coupangPartnersLink || '',
+            showOnLanding: newPostData.showOnLanding !== false
           });
         }
         await global.supabaseClient.from('sns_metrics').insert([{
@@ -320,7 +325,8 @@
             generatedBlogBody: updatedPost.generatedBlogBody || '',
             generatedThreadsMain: updatedPost.generatedThreadsMain || '',
             generatedThreadsReply: updatedPost.generatedThreadsReply || '',
-            coupangPartnersLink: updatedPost.coupangPartnersLink || ''
+            coupangPartnersLink: updatedPost.coupangPartnersLink || '',
+            showOnLanding: updatedPost.showOnLanding !== false
           });
         } else {
           textValue = updatedPost.content;

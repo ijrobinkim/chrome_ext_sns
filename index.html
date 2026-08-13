@@ -361,6 +361,9 @@
               try {
                 const parsed = JSON.parse(content);
                 if (parsed.isShopping) {
+                  const showOnLanding = parsed.showOnLanding !== false;
+                  if (!showOnLanding) return; // Skip if user disabled landing page visibility
+
                   const title = parsed.title || '상품 정보';
                   const thumbnail = parsed.images && parsed.images.length > 0 ? parsed.images[0] : '';
                   const link = parsed.coupangPartnersLink || parsed.link || item.link || '#';

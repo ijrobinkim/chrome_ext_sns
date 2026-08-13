@@ -1348,12 +1348,37 @@
             <td>
               <span class="status-badge status-collected">게시됨</span>
             </td>
+            <td onclick="event.stopPropagation();" style="text-align: center;">
+              <input type="checkbox" class="landing-toggle-checkbox" data-post-id="${post.id}" ${post.showOnLanding !== false ? 'checked' : ''} style="width: 16px; height: 16px; cursor: pointer; accent-color: #7c3aed;">
+            </td>
             <td style="color: #94a3b8; font-size: 12px;">${escapeHtml(post.createdAt)}</td>
             <td style="text-align: right;" onclick="event.stopPropagation();">
               <button class="row-action-btn" style="color: #818cf8; background: none; border: none; font-weight: 700; cursor: pointer;">보기 ➔</button>
             </td>
           `;
           tbody.appendChild(tr);
+        });
+
+        // Add change event listener for landing page toggles
+        document.querySelectorAll('.landing-toggle-checkbox').forEach(cb => {
+          cb.addEventListener('change', async (e) => {
+            const postId = e.target.dataset.postId;
+            const isChecked = e.target.checked;
+            
+            // Update in local memory
+            const postIndex = allPosts.findIndex(p => String(p.id) === String(postId));
+            if (postIndex !== -1) {
+              allPosts[postIndex].showOnLanding = isChecked;
+            }
+            
+            // Save update remotely & locally
+            try {
+              await window.CloudflareClient.updateBoardPost(postId, { showOnLanding: isChecked });
+              console.log(`Updated post ${postId} showOnLanding state to ${isChecked}`);
+            } catch (err) {
+              console.error('Failed to update showOnLanding status:', err);
+            }
+          });
         });
       }
     } else {
