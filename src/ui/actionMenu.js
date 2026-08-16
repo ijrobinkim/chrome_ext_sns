@@ -69,6 +69,7 @@
       global.SNSExporter.showToast('✅ 스레드가 수집되었습니다! 보드로 이동합니다.');
       // Open dashboard tab immediately
       window.open(dashboardUrl, '_blank');
+      overlay.remove();
     });
     modal.appendChild(collectBtn);
 
@@ -287,6 +288,7 @@
       }
       global.SNSExporter.showToast(`✅ ${isNaver ? '네이버 쇼핑' : '쿠팡'} 상품이 수집함에 저장되었습니다!`);
       window.open(dashboardUrl, '_blank');
+      overlay.remove();
     });
     modal.appendChild(collectBtn);
 
