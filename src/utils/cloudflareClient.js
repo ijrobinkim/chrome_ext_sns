@@ -373,7 +373,11 @@
           email: "hkthelife@gmail.com",
           desc: "이 포스팅은 쿠팡 파트너스 및 토스쇼핑 쉐어링크 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.\n\n찾으시는 제품명 or 제품번호를 검색해보세요!\n짧게 입력해도 모두 뜹니다!\n\n✉️ hkthelife@gmail.com"
         }
-      }
+      },
+      custom_links: [
+        { title: "내 스레드 프로필 (샘플)", url: "https://www.threads.net/" },
+        { title: "내 인스타그램 (샘플)", url: "https://www.instagram.com/" }
+      ]
     };
 
     if (!global.supabaseClient) {
@@ -399,7 +403,8 @@
             profiles: {
               kkoolkkool: { ...defaultSettings.profiles.kkoolkkool, ...(parsed.profiles?.kkoolkkool || {}) },
               salim_nam: { ...defaultSettings.profiles.salim_nam, ...(parsed.profiles?.salim_nam || {}) }
-            }
+            },
+            custom_links: parsed.custom_links || defaultSettings.custom_links
           };
         } catch (e) {
           console.warn('[CloudflareClient] Failed to parse admin_config JSON. Using defaults.');

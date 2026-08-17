@@ -297,6 +297,23 @@
                   </a>
                 </div>
               </div>
+
+              <!-- Custom Shortcuts Box -->
+              <div style="background: #12121e; border: 1px solid #2e2e3e; border-radius: 10px; padding: 16px; display: flex; flex-direction: column;">
+                <h4 style="font-size: 13px; color: #a5b4fc; font-weight: 700; margin-bottom: 12px;">🔗 내 바로가기 링크 관리</h4>
+                
+                <!-- Link list container -->
+                <div id="mypage-custom-links-container" style="display: flex; flex-direction: column; gap: 8px; flex: 1; margin-bottom: 12px; max-height: 240px; overflow-y: auto;">
+                  <div style="font-size: 12px; color: #64748b; text-align: center; padding: 20px 0;">등록된 바로가기가 없습니다. 아래에서 추가해보세요!</div>
+                </div>
+
+                <!-- Add Form -->
+                <div style="border-top: 1px solid #282838; padding-top: 12px; display: flex; flex-direction: column; gap: 8px;">
+                  <input type="text" id="mypage-add-link-title" placeholder="링크 이름 (예: 내 스레드)" style="width: 100%; padding: 8px 10px; background: #1a1a2e; border: 1px solid #313244; color: #fff; border-radius: 6px; font-size: 12px; outline: none;">
+                  <input type="text" id="mypage-add-link-url" placeholder="주소 (예: threads.net/@id)" style="width: 100%; padding: 8px 10px; background: #1a1a2e; border: 1px solid #313244; color: #fff; border-radius: 6px; font-size: 12px; outline: none;">
+                  <button id="btn-mypage-add-link" class="db-modal-btn btn-gradient" style="margin: 0; padding: 8px; font-size: 12px; font-weight: 700; width: 100%;">링크 추가하기 +</button>
+                </div>
+              </div>
             </div>
           </div>
 

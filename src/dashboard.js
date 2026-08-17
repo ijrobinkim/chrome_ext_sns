@@ -89,6 +89,8 @@
     if (profileSelect) {
       fillProfileFields(profileSelect.value);
     }
+
+    renderCustomLinks();
   }
 
   function fillProfileFields(profileKey) {
@@ -104,6 +106,72 @@
     if (avatarInput) avatarInput.value = profile.avatar || '';
     if (emailInput) emailInput.value = profile.email || '';
     if (descInput) descInput.value = profile.desc || '';
+  }
+
+  function renderCustomLinks() {
+    const container = document.getElementById('mypage-custom-links-container');
+    if (!container) return;
+
+    const links = (adminConfig && adminConfig.custom_links) ? adminConfig.custom_links : [];
+
+    if (links.length === 0) {
+      container.innerHTML = '<div style="font-size: 12px; color: #64748b; text-align: center; padding: 20px 0;">등록된 바로가기가 없습니다. 아래에서 추가해보세요!</div>';
+      return;
+    }
+
+    container.innerHTML = '';
+    links.forEach((link, index) => {
+      const row = document.createElement('div');
+      row.style.display = 'flex';
+      row.style.alignItems = 'center';
+      row.style.justifyContent = 'space-between';
+      row.style.background = '#1a1a2e';
+      row.style.padding = '6px 8px';
+      row.style.borderRadius = '6px';
+      row.style.border = '1px solid #2e2e3e';
+      row.style.gap = '8px';
+
+      const linkEl = document.createElement('a');
+      linkEl.href = link.url;
+      linkEl.target = '_blank';
+      linkEl.textContent = link.title;
+      linkEl.style.color = '#cbd5e1';
+      linkEl.style.fontSize = '13px';
+      linkEl.style.textDecoration = 'none';
+      linkEl.style.flex = '1';
+      linkEl.style.overflow = 'hidden';
+      linkEl.style.textOverflow = 'ellipsis';
+      linkEl.style.whiteSpace = 'nowrap';
+      
+      linkEl.addEventListener('mouseenter', () => { linkEl.style.color = '#a5b4fc'; });
+      linkEl.addEventListener('mouseleave', () => { linkEl.style.color = '#cbd5e1'; });
+
+      const delBtn = document.createElement('button');
+      delBtn.innerHTML = '✕';
+      delBtn.style.background = 'none';
+      delBtn.style.border = 'none';
+      delBtn.style.color = '#f87171';
+      delBtn.style.cursor = 'pointer';
+      delBtn.style.fontSize = '12px';
+      delBtn.style.fontWeight = 'bold';
+      delBtn.style.padding = '2px 6px';
+      
+      delBtn.addEventListener('click', async () => {
+        if (confirm(`'${link.title}' 바로가기를 삭제하시겠습니까?`)) {
+          adminConfig.custom_links.splice(index, 1);
+          const success = await window.CloudflareClient.saveAdminConfig(adminConfig);
+          if (success) {
+            renderCustomLinks();
+          } else {
+            alert('삭제에 실패했습니다. DB 연결을 확인해 주세요.');
+          }
+        }
+      });
+
+      row.appendChild(linkEl);
+      row.appendChild(delBtn);
+      container.appendChild(row);
+    });
   }
 
   function bindMyPageEvents() {
@@ -203,6 +271,41 @@
           alert(`✅ [${profileKey}] 프로필 정보가 성공적으로 DB에 저장되었습니다.`);
         } else {
           alert('❌ 프로필 정보 저장에 실패했습니다. DB 연결을 확인해 주세요.');
+        }
+      });
+    }
+
+    const addLinkBtn = document.getElementById('btn-mypage-add-link');
+    const addLinkTitleInput = document.getElementById('mypage-add-link-title');
+    const addLinkUrlInput = document.getElementById('mypage-add-link-url');
+
+    if (addLinkBtn && addLinkTitleInput && addLinkUrlInput) {
+      addLinkBtn.addEventListener('click', async () => {
+        const title = addLinkTitleInput.value.trim();
+        let url = addLinkUrlInput.value.trim();
+
+        if (!title || !url) {
+          alert('링크 이름과 주소를 모두 입력해주세요.');
+          return;
+        }
+
+        if (!url.startsWith('http://') && !url.startsWith('https://')) {
+          url = 'https://' + url;
+        }
+
+        if (!adminConfig.custom_links) {
+          adminConfig.custom_links = [];
+        }
+
+        adminConfig.custom_links.push({ title, url });
+
+        const success = await window.CloudflareClient.saveAdminConfig(adminConfig);
+        if (success) {
+          addLinkTitleInput.value = '';
+          addLinkUrlInput.value = '';
+          renderCustomLinks();
+        } else {
+          alert('링크 추가에 실패했습니다. DB 연결을 확인해 주세요.');
         }
       });
     }
