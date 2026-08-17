@@ -97,7 +97,8 @@
           .order('saved_at', { ascending: false });
 
         if (!error && data && data.length > 0) {
-          const remotePosts = data.map((item, idx) => {
+          const filteredData = data.filter(item => item.author !== 'admin_config');
+          const remotePosts = filteredData.map((item, idx) => {
             let category = 'sns';
             let categoryLabel = '📢 스레드';
             let title = '수집된 콘텐츠';
@@ -354,13 +355,117 @@
     }
   }
 
+  async function loadAdminConfig() {
+    const defaultSettings = {
+      username: "admin",
+      password: "asdf1234",
+      gemini_api_key: "",
+      profiles: {
+        kkoolkkool: {
+          name: "kkoolkkool",
+          avatar: "kkoolkkool_avatar.jpg",
+          email: "koolkool@naver.com",
+          desc: "이 포스팅은 쿠팡 파트너스 및 토스쇼핑 쉐어링크 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다."
+        },
+        salim_nam: {
+          name: "salim_nam",
+          avatar: "salim_nam_avatar.jpg",
+          email: "hkthelife@gmail.com",
+          desc: "이 포스팅은 쿠팡 파트너스 및 토스쇼핑 쉐어링크 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.\n\n찾으시는 제품명 or 제품번호를 검색해보세요!\n짧게 입력해도 모두 뜹니다!\n\n✉️ hkthelife@gmail.com"
+        }
+      }
+    };
+
+    if (!global.supabaseClient) {
+      console.warn('[CloudflareClient] Supabase client is not loaded. Using default settings.');
+      return defaultSettings;
+    }
+
+    try {
+      const { data, error } = await global.supabaseClient
+        .from('sns_metrics')
+        .select('*')
+        .eq('author', 'admin_config')
+        .limit(1);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        try {
+          const parsed = JSON.parse(data[0].text);
+          return {
+            ...defaultSettings,
+            ...parsed,
+            profiles: {
+              kkoolkkool: { ...defaultSettings.profiles.kkoolkkool, ...(parsed.profiles?.kkoolkkool || {}) },
+              salim_nam: { ...defaultSettings.profiles.salim_nam, ...(parsed.profiles?.salim_nam || {}) }
+            }
+          };
+        } catch (e) {
+          console.warn('[CloudflareClient] Failed to parse admin_config JSON. Using defaults.');
+        }
+      }
+    } catch (err) {
+      console.error('[CloudflareClient] Failed to load admin config:', err);
+    }
+    return defaultSettings;
+  }
+
+  async function saveAdminConfig(config) {
+    if (!global.supabaseClient) {
+      console.warn('[CloudflareClient] Supabase client is not loaded. Cannot save admin config to DB.');
+      return false;
+    }
+
+    try {
+      const { data, error: selectError } = await global.supabaseClient
+        .from('sns_metrics')
+        .select('id')
+        .eq('author', 'admin_config')
+        .limit(1);
+
+      if (selectError) throw selectError;
+
+      const textValue = JSON.stringify(config);
+
+      if (data && data.length > 0) {
+        const { error: updateError } = await global.supabaseClient
+          .from('sns_metrics')
+          .update({ text: textValue, saved_at: new Date().toISOString() })
+          .eq('id', data[0].id);
+
+        if (updateError) throw updateError;
+      } else {
+        const { error: insertError } = await global.supabaseClient
+          .from('sns_metrics')
+          .insert([{
+            author: 'admin_config',
+            text: textValue,
+            link: '#',
+            views: 0,
+            likes: 0,
+            comments: 0,
+            saved_at: new Date().toISOString()
+          }]);
+
+        if (insertError) throw insertError;
+      }
+      return true;
+    } catch (err) {
+      console.error('[CloudflareClient] Failed to save admin config:', err);
+      return false;
+    }
+  }
+
   const CloudflareClient = {
     fetchBoardPosts,
     saveBoardPost,
     deleteBoardPost,
     updateBoardPost,
     getLocalPosts,
-    getCategoryLabel
+    getCategoryLabel,
+    loadAdminConfig,
+    saveAdminConfig
   };
 
   if (typeof module === 'object' && module.exports) {

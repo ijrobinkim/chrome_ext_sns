@@ -9,6 +9,30 @@
 </head>
 <body>
 
+  <!-- Fullscreen Login Overlay -->
+  <div id="login-overlay" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: #0f172a; z-index: 99999; display: flex; justify-content: center; align-items: center; font-family: sans-serif;">
+    <div style="background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 32px; width: 100%; max-width: 400px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5); color: #f8fafc; text-align: center;">
+      <h2 style="font-size: 24px; font-weight: 800; margin-bottom: 8px; color: #a5b4fc; letter-spacing: -0.025em; display: flex; align-items: center; justify-content: center; gap: 8px;">🔑 관리자 로그인</h2>
+      <p style="font-size: 13px; color: #94a3b8; margin-bottom: 24px;">대시보드를 이용하려면 로그인해 주세요.</p>
+      
+      <div style="text-align: left; margin-bottom: 16px;">
+        <label style="font-size: 11px; font-weight: 700; color: #a5b4fc; display: block; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em;">관리자 ID</label>
+        <input type="text" id="login-username" placeholder="아이디를 입력하세요" style="width: 100%; padding: 12px; background-color: #0f172a; border: 1px solid #334155; color: #ffffff; border-radius: 8px; font-size: 14px; outline: none; transition: border-color 0.2s;">
+      </div>
+      
+      <div style="text-align: left; margin-bottom: 24px;">
+        <label style="font-size: 11px; font-weight: 700; color: #a5b4fc; display: block; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em;">비밀번호</label>
+        <input type="password" id="login-password" placeholder="비밀번호를 입력하세요" style="width: 100%; padding: 12px; background-color: #0f172a; border: 1px solid #334155; color: #ffffff; border-radius: 8px; font-size: 14px; outline: none; transition: border-color 0.2s;">
+      </div>
+      
+      <div id="login-error-msg" style="color: #f87171; font-size: 13px; margin-bottom: 16px; font-weight: 600; min-height: 18px;"></div>
+      
+      <button id="btn-login-submit" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #7c3aed, #6366f1); color: #ffffff; border: none; border-radius: 8px; font-weight: 700; font-size: 15px; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);">
+        로그인
+      </button>
+    </div>
+  </div>
+
   <div class="app-container">
     <!-- Left Navigation Sidebar (Photo 1) -->
     <aside class="sidebar">
@@ -45,6 +69,12 @@
         <a href="#" class="nav-item">📊 수익 실적</a>
         <a href="#" class="nav-item">🏆 챌린지</a>
         <a href="#" class="nav-item">💎 랭킹</a>
+      </div>
+
+      <!-- Navigation Section 4: 설정 -->
+      <div class="nav-section">
+        <div class="nav-title">설정</div>
+        <a href="#" class="nav-item" id="nav-mypage">👤 MY 페이지</a>
       </div>
     </aside>
 
@@ -201,6 +231,145 @@
           
           <div style="display: flex; justify-content: flex-end; margin-top: 16px;">
             <button id="btn-save-remote-post" class="db-modal-btn btn-red" style="margin: 0; width: auto; padding: 12px 32px; display: none;">💾 생성된 원고 수집함에 저장하기</button>
+          </div>
+        </div>
+      </main>
+
+      <!-- My Page View -->
+      <main class="content-body" id="mypage-view" style="display: none;">
+        <div class="tabs-row" style="margin-bottom: 24px;">
+          <h2 style="font-size: 20px; color: #f8fafc; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+            👤 MY 페이지 및 설정
+          </h2>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 24px;">
+          <!-- Quick Shortcuts Grid -->
+          <div style="background: #1e1e2f; border: 1px solid #313244; border-radius: 12px; padding: 20px;">
+            <h3 style="font-size: 15px; color: #a5b4fc; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 6px;">
+              🔗 플랫폼 바로가기 (원격 발행 / 트렌드 분석)
+            </h3>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px;">
+              <!-- Social Platforms Box -->
+              <div style="background: #12121e; border: 1px solid #2e2e3e; border-radius: 10px; padding: 16px;">
+                <h4 style="font-size: 13px; color: #f472b6; font-weight: 700; margin-bottom: 12px;">📢 소셜 플랫폼 바로가기</h4>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                  <a href="https://www.threads.net/" target="_blank" style="color: #cbd5e1; font-size: 13px; text-decoration: none; display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; background: #1a1a2e; border-radius: 6px; border: 1px solid transparent; transition: all 0.2s;">
+                    <span>스레드 (Threads)</span> <span style="font-size: 11px; color: #64748b;">이동 ➔</span>
+                  </a>
+                  <a href="https://www.instagram.com/" target="_blank" style="color: #cbd5e1; font-size: 13px; text-decoration: none; display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; background: #1a1a2e; border-radius: 6px; border: 1px solid transparent; transition: all 0.2s;">
+                    <span>인스타그램 (Instagram)</span> <span style="font-size: 11px; color: #64748b;">이동 ➔</span>
+                  </a>
+                  <a href="https://www.youtube.com/" target="_blank" style="color: #cbd5e1; font-size: 13px; text-decoration: none; display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; background: #1a1a2e; border-radius: 6px; border: 1px solid transparent; transition: all 0.2s;">
+                    <span>유튜브 (YouTube)</span> <span style="font-size: 11px; color: #64748b;">이동 ➔</span>
+                  </a>
+                  <a href="https://www.xiaohongshu.com/" target="_blank" style="color: #cbd5e1; font-size: 13px; text-decoration: none; display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; background: #1a1a2e; border-radius: 6px; border: 1px solid transparent; transition: all 0.2s;">
+                    <span>샤오홍슈 (Xiaohongshu)</span> <span style="font-size: 11px; color: #64748b;">이동 ➔</span>
+                  </a>
+                  <a href="https://partners.coupang.com/" target="_blank" style="color: #cbd5e1; font-size: 13px; text-decoration: none; display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; background: #1a1a2e; border-radius: 6px; border: 1px solid transparent; transition: all 0.2s;">
+                    <span>쿠팡 파트너스 홈</span> <span style="font-size: 11px; color: #64748b;">이동 ➔</span>
+                  </a>
+                  <a href="https://toss.im/" target="_blank" style="color: #cbd5e1; font-size: 13px; text-decoration: none; display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; background: #1a1a2e; border-radius: 6px; border: 1px solid transparent; transition: all 0.2s;">
+                    <span>토스쇼핑 홈</span> <span style="font-size: 11px; color: #64748b;">이동 ➔</span>
+                  </a>
+                </div>
+              </div>
+
+              <!-- Trend Platforms Box -->
+              <div style="background: #12121e; border: 1px solid #2e2e3e; border-radius: 10px; padding: 16px;">
+                <h4 style="font-size: 13px; color: #38bdf8; font-weight: 700; margin-bottom: 12px;">🔥 실시간 트렌드 및 인기순위</h4>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                  <a href="https://shopping.naver.com/best/home" target="_blank" style="color: #cbd5e1; font-size: 13px; text-decoration: none; display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; background: #1a1a2e; border-radius: 6px; border: 1px solid transparent; transition: all 0.2s;">
+                    <span>네이버 쇼핑 베스트 100</span> <span style="font-size: 11px; color: #64748b;">이동 ➔</span>
+                  </a>
+                  <a href="https://datalab.naver.com/" target="_blank" style="color: #cbd5e1; font-size: 13px; text-decoration: none; display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; background: #1a1a2e; border-radius: 6px; border: 1px solid transparent; transition: all 0.2s;">
+                    <span>네이버 데이터랩 (트렌드)</span> <span style="font-size: 11px; color: #64748b;">이동 ➔</span>
+                  </a>
+                  <a href="https://www.coupang.com/np/goldbox" target="_blank" style="color: #cbd5e1; font-size: 13px; text-decoration: none; display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; background: #1a1a2e; border-radius: 6px; border: 1px solid transparent; transition: all 0.2s;">
+                    <span>쿠팡 골드박스 (오늘의특가)</span> <span style="font-size: 11px; color: #64748b;">이동 ➔</span>
+                  </a>
+                  <a href="https://trend.kakao.com/" target="_blank" style="color: #cbd5e1; font-size: 13px; text-decoration: none; display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; background: #1a1a2e; border-radius: 6px; border: 1px solid transparent; transition: all 0.2s;">
+                    <span>카카오 트렌드</span> <span style="font-size: 11px; color: #64748b;">이동 ➔</span>
+                  </a>
+                  <a href="https://zuise.com/" target="_blank" style="color: #cbd5e1; font-size: 13px; text-decoration: none; display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; background: #1a1a2e; border-radius: 6px; border: 1px solid transparent; transition: all 0.2s;">
+                    <span>주이세 (쿠팡 키워드 분석)</span> <span style="font-size: 11px; color: #64748b;">이동 ➔</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Configuration Panels Grid -->
+          <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+            <!-- Left Side: Basic Settings & API Key & PW -->
+            <div style="flex: 1; min-width: 300px; display: flex; flex-direction: column; gap: 20px;">
+              <!-- Google Gemini API Key Section -->
+              <div style="background: #1e1e2f; border: 1px solid #313244; border-radius: 12px; padding: 20px;">
+                <h3 style="font-size: 15px; color: #a5b4fc; font-weight: 700; margin-bottom: 12px;">🔑 Google Gemini API Key 설정</h3>
+                <p style="font-size: 12px; color: #94a3b8; margin-bottom: 16px;">여기에 설정된 API 키는 데이터베이스에 영구 저장되며, 글 자동생성 시 항상 우선 로드되어 키 분실을 방지합니다.</p>
+                <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px;">
+                  <input type="password" id="mypage-gemini-key" placeholder="Google Gemini API Key를 입력하세요" style="flex: 1; padding: 10px 12px; background: #12121e; border: 1px solid #313244; color: #fff; border-radius: 8px; font-size: 13px; outline: none;">
+                  <button id="btn-mypage-save-key" class="db-modal-btn btn-gradient" style="margin: 0; padding: 10px 20px; white-space: nowrap; height: 38px;">저장</button>
+                </div>
+                <a href="https://aistudio.google.com/" target="_blank" style="font-size: 12px; color: #818cf8; text-decoration: underline;">Google AI Studio에서 API 키 받기 ➔</a>
+              </div>
+
+              <!-- Password Change Section -->
+              <div style="background: #1e1e2f; border: 1px solid #313244; border-radius: 12px; padding: 20px;">
+                <h3 style="font-size: 15px; color: #a5b4fc; font-weight: 700; margin-bottom: 12px;">🔒 관리자 비밀번호 변경</h3>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                  <div>
+                    <label style="display: block; font-size: 12px; color: #cbd5e1; margin-bottom: 6px;">현재 비밀번호</label>
+                    <input type="password" id="mypage-current-pw" placeholder="현재 비밀번호를 입력하세요" style="width: 100%; padding: 10px 12px; background: #12121e; border: 1px solid #313244; color: #fff; border-radius: 8px; font-size: 13px; outline: none;">
+                  </div>
+                  <div>
+                    <label style="display: block; font-size: 12px; color: #cbd5e1; margin-bottom: 6px;">새 비밀번호</label>
+                    <input type="password" id="mypage-new-pw" placeholder="새 비밀번호를 입력하세요" style="width: 100%; padding: 10px 12px; background: #12121e; border: 1px solid #313244; color: #fff; border-radius: 8px; font-size: 13px; outline: none;">
+                  </div>
+                  <div>
+                    <label style="display: block; font-size: 12px; color: #cbd5e1; margin-bottom: 6px;">새 비밀번호 확인</label>
+                    <input type="password" id="mypage-confirm-pw" placeholder="새 비밀번호를 다시 입력하세요" style="width: 100%; padding: 10px 12px; background: #12121e; border: 1px solid #313244; color: #fff; border-radius: 8px; font-size: 13px; outline: none;">
+                  </div>
+                  <div id="mypage-pw-error" style="color: #f87171; font-size: 12px; font-weight: 600; min-height: 16px;"></div>
+                  <button id="btn-mypage-change-pw" class="db-modal-btn btn-purple" style="margin: 0; padding: 10px; width: 100%; font-size: 13px;">비밀번호 업데이트</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Side: Landing Profile Settings -->
+            <div style="flex: 2; min-width: 380px; background: #1e1e2f; border: 1px solid #313244; border-radius: 12px; padding: 20px; display: flex; flex-direction: column;">
+              <h3 style="font-size: 15px; color: #a5b4fc; font-weight: 700; margin-bottom: 12px;">👤 프로필 카드 관리 (일반 뷰 랜딩용)</h3>
+              <p style="font-size: 12px; color: #94a3b8; margin-bottom: 16px;">랜딩 페이지(일반 뷰)에 표시될 프로필 세부 정보를 선택하여 실시간으로 편집하고 DB에 저장합니다.</p>
+              
+              <div style="margin-bottom: 16px;">
+                <label style="display: block; font-size: 12px; color: #cbd5e1; margin-bottom: 6px; font-weight: 700;">대상 프로필 선택</label>
+                <select id="mypage-profile-select" style="width: 100%; padding: 10px; background: #12121e; border: 1px solid #313244; color: #fff; border-radius: 8px; font-size: 13px; outline: none;">
+                  <option value="kkoolkkool">kkoolkkool (기본 프로필)</option>
+                  <option value="salim_nam">salim_nam (살림남 프로필)</option>
+                </select>
+              </div>
+
+              <div style="display: flex; flex-direction: column; gap: 12px; flex: 1;">
+                <div>
+                  <label style="display: block; font-size: 12px; color: #cbd5e1; margin-bottom: 6px;">프로필 표시명</label>
+                  <input type="text" id="mypage-profile-name" placeholder="닉네임" style="width: 100%; padding: 10px 12px; background: #12121e; border: 1px solid #313244; color: #fff; border-radius: 8px; font-size: 13px; outline: none;">
+                </div>
+                <div>
+                  <label style="display: block; font-size: 12px; color: #cbd5e1; margin-bottom: 6px;">아바타 이미지 파일명 (또는 절대 경로 URL)</label>
+                  <input type="text" id="mypage-profile-avatar" placeholder="예: kkoolkkool_avatar.jpg" style="width: 100%; padding: 10px 12px; background: #12121e; border: 1px solid #313244; color: #fff; border-radius: 8px; font-size: 13px; outline: none;">
+                </div>
+                <div>
+                  <label style="display: block; font-size: 12px; color: #cbd5e1; margin-bottom: 6px;">비즈니스 연락처 (이메일)</label>
+                  <input type="email" id="mypage-profile-email" placeholder="이메일 주소를 입력하세요" style="width: 100%; padding: 10px 12px; background: #12121e; border: 1px solid #313244; color: #fff; border-radius: 8px; font-size: 13px; outline: none;">
+                </div>
+                <div style="display: flex; flex-direction: column; flex: 1;">
+                  <label style="display: block; font-size: 12px; color: #cbd5e1; margin-bottom: 6px;">공정위 고지 문구 및 자기소개글</label>
+                  <textarea id="mypage-profile-desc" rows="5" placeholder="프로필 하단에 고정 표시될 자기소개 및 제휴 수수료 고지 문구입니다." style="width: 100%; flex: 1; padding: 10px 12px; background: #12121e; border: 1px solid #313244; color: #fff; border-radius: 8px; font-size: 13px; line-height: 1.5; font-family: inherit; resize: none; outline: none; min-height: 100px;"></textarea>
+                </div>
+                <button id="btn-mypage-save-profile" class="db-modal-btn btn-red" style="margin-top: 8px; padding: 12px; font-size: 13px; width: 100%;">💾 선택된 프로필 정보 저장하기</button>
+              </div>
+            </div>
           </div>
         </div>
       </main>

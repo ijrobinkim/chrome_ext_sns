@@ -10,8 +10,210 @@
   let currentSearchKeyword = '';
   let currentLayoutMode = 'list'; // 'list' | 'grid'
   let activeViewingPostId = null;
+  let adminConfig = null;
 
-  document.addEventListener('DOMContentLoaded', () => {
+  async function initializeAuthAndConfig() {
+    const loginOverlay = document.getElementById('login-overlay');
+    const usernameInput = document.getElementById('login-username');
+    const passwordInput = document.getElementById('login-password');
+    const loginBtn = document.getElementById('btn-login-submit');
+    const loginError = document.getElementById('login-error-msg');
+
+    if (window.CloudflareClient && typeof window.CloudflareClient.loadAdminConfig === 'function') {
+      adminConfig = await window.CloudflareClient.loadAdminConfig();
+    }
+
+    if (sessionStorage.getItem('dashboard_logged_in') === 'true') {
+      if (loginOverlay) loginOverlay.style.display = 'none';
+      syncGeminiKeyToLocalStorage();
+      return;
+    }
+
+    if (loginOverlay) {
+      loginOverlay.style.display = 'flex';
+    }
+
+    const handleLogin = async () => {
+      const u = usernameInput ? usernameInput.value.trim() : '';
+      const p = passwordInput ? passwordInput.value : '';
+
+      if (!adminConfig) {
+        adminConfig = { username: 'admin', password: 'asdf1234' };
+      }
+
+      if (u === adminConfig.username && p === adminConfig.password) {
+        sessionStorage.setItem('dashboard_logged_in', 'true');
+        if (loginOverlay) loginOverlay.style.display = 'none';
+        
+        syncGeminiKeyToLocalStorage();
+        
+        if (window.CloudflareClient && typeof window.CloudflareClient.saveAdminConfig === 'function') {
+          await window.CloudflareClient.saveAdminConfig(adminConfig);
+        }
+      } else {
+        if (loginError) {
+          loginError.textContent = '❌ 아이디 또는 비밀번호가 올바르지 않습니다.';
+        }
+      }
+    };
+
+    if (loginBtn) {
+      loginBtn.addEventListener('click', handleLogin);
+    }
+    if (passwordInput) {
+      passwordInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') handleLogin();
+      });
+    }
+  }
+
+  function syncGeminiKeyToLocalStorage() {
+    if (adminConfig && adminConfig.gemini_api_key) {
+      localStorage.setItem('sns_gemini_api_key', adminConfig.gemini_api_key);
+      const geminiInput = document.getElementById('gemini-api-key-input');
+      if (geminiInput) {
+        geminiInput.value = adminConfig.gemini_api_key;
+      }
+    }
+  }
+
+  function loadMyPageData() {
+    if (!adminConfig) return;
+
+    const geminiInput = document.getElementById('mypage-gemini-key');
+    if (geminiInput) {
+      geminiInput.value = adminConfig.gemini_api_key || '';
+    }
+
+    const profileSelect = document.getElementById('mypage-profile-select');
+    if (profileSelect) {
+      fillProfileFields(profileSelect.value);
+    }
+  }
+
+  function fillProfileFields(profileKey) {
+    if (!adminConfig || !adminConfig.profiles || !adminConfig.profiles[profileKey]) return;
+    const profile = adminConfig.profiles[profileKey];
+
+    const nameInput = document.getElementById('mypage-profile-name');
+    const avatarInput = document.getElementById('mypage-profile-avatar');
+    const emailInput = document.getElementById('mypage-profile-email');
+    const descInput = document.getElementById('mypage-profile-desc');
+
+    if (nameInput) nameInput.value = profile.name || '';
+    if (avatarInput) avatarInput.value = profile.avatar || '';
+    if (emailInput) emailInput.value = profile.email || '';
+    if (descInput) descInput.value = profile.desc || '';
+  }
+
+  function bindMyPageEvents() {
+    const saveKeyBtn = document.getElementById('btn-mypage-save-key');
+    const geminiInput = document.getElementById('mypage-gemini-key');
+    if (saveKeyBtn && geminiInput) {
+      saveKeyBtn.addEventListener('click', async () => {
+        const key = geminiInput.value.trim();
+        adminConfig.gemini_api_key = key;
+        
+        const success = await window.CloudflareClient.saveAdminConfig(adminConfig);
+        if (success) {
+          syncGeminiKeyToLocalStorage();
+          alert('✅ Google Gemini API Key가 성공적으로 DB에 저장되었습니다.');
+        } else {
+          alert('❌ API Key 저장에 실패했습니다. DB 연결을 확인해 주세요.');
+        }
+      });
+    }
+
+    const changePwBtn = document.getElementById('btn-mypage-change-pw');
+    const currentPwInput = document.getElementById('mypage-current-pw');
+    const newPwInput = document.getElementById('mypage-new-pw');
+    const confirmPwInput = document.getElementById('mypage-confirm-pw');
+    const pwError = document.getElementById('mypage-pw-error');
+
+    if (changePwBtn && currentPwInput && newPwInput && confirmPwInput) {
+      changePwBtn.addEventListener('click', async () => {
+        const curr = currentPwInput.value;
+        const newPw = newPwInput.value;
+        const conf = confirmPwInput.value;
+
+        if (curr !== adminConfig.password) {
+          if (pwError) pwError.textContent = '❌ 현재 비밀번호가 일치하지 않습니다.';
+          return;
+        }
+        if (!newPw) {
+          if (pwError) pwError.textContent = '❌ 새 비밀번호를 입력해 주세요.';
+          return;
+        }
+        if (newPw !== conf) {
+          if (pwError) pwError.textContent = '❌ 새 비밀번호 확인이 일치하지 않습니다.';
+          return;
+        }
+
+        adminConfig.password = newPw;
+        const success = await window.CloudflareClient.saveAdminConfig(adminConfig);
+        if (success) {
+          if (pwError) {
+            pwError.style.color = '#4ade80';
+            pwError.textContent = '✅ 비밀번호가 변경되었습니다.';
+          }
+          currentPwInput.value = '';
+          newPwInput.value = '';
+          confirmPwInput.value = '';
+          alert('✅ 비밀번호가 성공적으로 변경되었습니다.');
+          setTimeout(() => {
+            if (pwError) {
+              pwError.style.color = '#f87171';
+              pwError.textContent = '';
+            }
+          }, 3000);
+        } else {
+          alert('❌ 비밀번호 변경에 실패했습니다. DB 연결을 확인해 주세요.');
+        }
+      });
+    }
+
+    const profileSelect = document.getElementById('mypage-profile-select');
+    if (profileSelect) {
+      profileSelect.addEventListener('change', (e) => {
+        fillProfileFields(e.target.value);
+      });
+    }
+
+    const saveProfileBtn = document.getElementById('btn-mypage-save-profile');
+    if (saveProfileBtn && profileSelect) {
+      saveProfileBtn.addEventListener('click', async () => {
+        const profileKey = profileSelect.value;
+        const nameInput = document.getElementById('mypage-profile-name');
+        const avatarInput = document.getElementById('mypage-profile-avatar');
+        const emailInput = document.getElementById('mypage-profile-email');
+        const descInput = document.getElementById('mypage-profile-desc');
+
+        if (!adminConfig.profiles) adminConfig.profiles = {};
+        if (!adminConfig.profiles[profileKey]) adminConfig.profiles[profileKey] = {};
+
+        adminConfig.profiles[profileKey] = {
+          name: nameInput ? nameInput.value.trim() : '',
+          avatar: avatarInput ? avatarInput.value.trim() : '',
+          email: emailInput ? emailInput.value.trim() : '',
+          desc: descInput ? descInput.value : ''
+        };
+
+        const success = await window.CloudflareClient.saveAdminConfig(adminConfig);
+        if (success) {
+          alert(`✅ [${profileKey}] 프로필 정보가 성공적으로 DB에 저장되었습니다.`);
+        } else {
+          alert('❌ 프로필 정보 저장에 실패했습니다. DB 연결을 확인해 주세요.');
+        }
+      });
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    try {
+      await initializeAuthAndConfig();
+    } catch (e) {
+      console.error('Auth/Config Init Error:', e);
+    }
     loadData();
     bindEvents();
   });
@@ -36,8 +238,10 @@
     const navBoard = document.getElementById('nav-board');
     const navPublish = document.getElementById('nav-publish');
     const navRemoteArchive = document.getElementById('nav-remote-archive');
+    const navMypage = document.getElementById('nav-mypage');
     const boardView = document.getElementById('board-view');
     const publishView = document.getElementById('publish-view');
+    const mypageView = document.getElementById('mypage-view');
 
     if (navBoard && navPublish && boardView && publishView) {
       const resetNavActive = () => {
@@ -51,6 +255,7 @@
           navShopping.classList.add('active');
           boardView.style.display = 'block';
           publishView.style.display = 'none';
+          if (mypageView) mypageView.style.display = 'none';
 
           const catSelect = document.getElementById('filter-category');
           if (catSelect) {
@@ -67,6 +272,7 @@
         navBoard.classList.add('active');
         boardView.style.display = 'block';
         publishView.style.display = 'none';
+        if (mypageView) mypageView.style.display = 'none';
         
         const catSelect = document.getElementById('filter-category');
         if (catSelect) {
@@ -82,6 +288,7 @@
         navPublish.classList.add('active');
         publishView.style.display = 'block';
         boardView.style.display = 'none';
+        if (mypageView) mypageView.style.display = 'none';
       });
 
       if (navRemoteArchive) {
@@ -91,6 +298,7 @@
           navRemoteArchive.classList.add('active');
           boardView.style.display = 'block';
           publishView.style.display = 'none';
+          if (mypageView) mypageView.style.display = 'none';
 
           const catSelect = document.getElementById('filter-category');
           if (catSelect) {
@@ -100,6 +308,20 @@
           await loadData();
         });
       }
+
+      if (navMypage) {
+        navMypage.addEventListener('click', (e) => {
+          e.preventDefault();
+          resetNavActive();
+          navMypage.classList.add('active');
+          if (mypageView) mypageView.style.display = 'block';
+          boardView.style.display = 'none';
+          publishView.style.display = 'none';
+          loadMyPageData();
+        });
+      }
+
+      bindMyPageEvents();
     }
 
     // 0.5. Remote Publish Logic
@@ -606,10 +828,23 @@
     }
 
     if (btnSaveApiKey && inputApiKey && window.AIBlogClient) {
-      btnSaveApiKey.addEventListener('click', () => {
+      btnSaveApiKey.addEventListener('click', async () => {
         const key = inputApiKey.value.trim();
         window.AIBlogClient.saveGeminiKey(key);
-        alert('🔑 API 키가 안전하게 로컬 브라우저(localStorage)에 저장되었습니다!');
+        
+        if (adminConfig) {
+          adminConfig.gemini_api_key = key;
+          if (window.CloudflareClient && typeof window.CloudflareClient.saveAdminConfig === 'function') {
+            await window.CloudflareClient.saveAdminConfig(adminConfig);
+          }
+        }
+        
+        const mypageGeminiKey = document.getElementById('mypage-gemini-key');
+        if (mypageGeminiKey) {
+          mypageGeminiKey.value = key;
+        }
+        
+        alert('🔑 API 키가 안전하게 로컬 브라우저와 클라우드 DB에 저장되었습니다!');
       });
     }
 
