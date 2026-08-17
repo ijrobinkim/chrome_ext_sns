@@ -17,16 +17,39 @@
         console.log('[RemoteParser] Direct fetch failed, trying proxy...', e);
       }
 
-      // 2. 웹 환경이거나 권한이 없는 경우 무료 프록시로 Fallback
-      const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(url)}`;
-      const response = await fetch(proxyUrl);
-      if (!response.ok) {
-        if (response.status === 403 || response.status === 404) {
-          throw new Error(`HTTP Error: ${response.status} (크롬 확장 프로그램 관리 페이지(chrome://extensions)에서 이 확장 프로그램의 '새로고침(🔄)' 버튼을 꼭 눌러주세요!)`);
+      // 2. 웹 환경이거나 권한이 없는 경우 무료 프록시로 Fallback (1차: corsproxy.io)
+      try {
+        const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(url)}`;
+        const response = await fetch(proxyUrl);
+        if (response.ok) {
+          return await response.text();
         }
-        throw new Error(`HTTP Error: ${response.status}`);
+        console.log(`[RemoteParser] corsproxy.io failed with status ${response.status}, trying allorigins...`);
+      } catch (proxyError) {
+        console.log('[RemoteParser] corsproxy.io fetch failed, trying allorigins...', proxyError);
       }
-      return await response.text();
+
+      // 3. 2차 Fallback: api.allorigins.win
+      try {
+        const alloriginsUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+        const response = await fetch(alloriginsUrl);
+        if (response.ok) {
+          const json = await response.json();
+          if (json && json.contents) {
+            return json.contents;
+          }
+        }
+      } catch (aoError) {
+        console.log('[RemoteParser] allorigins fetch failed...', aoError);
+      }
+
+      // 모든 시도가 실패한 경우 명확한 에러 제공
+      const isExtension = window.location.protocol === 'chrome-extension:';
+      if (!isExtension) {
+        throw new Error(`웹 버전(pages.dev)에서는 보안(CORS) 제한으로 인해 쿠팡/토스 링크를 직접 가져올 수 없습니다.\n\n해결 방법: 설치된 크롬 확장 프로그램 팝업 창의 [📁 수집한 스레드 데이터 보드 열기] 버튼을 통해 확장 프로그램 전용 대시보드(chrome-extension://...)로 접속하여 다시 실행해 주세요!`);
+      } else {
+        throw new Error(`서버 에러 또는 네트워크 권한 문제입니다. 크롬 확장 프로그램 관리 페이지(chrome://extensions)에서 이 확장 프로그램의 '새로고침(🔄)' 버튼을 누른 뒤 다시 시도해 주세요.`);
+      }
     } catch (e) {
       console.error('[RemoteParser] Fetch error:', e);
       throw e;
