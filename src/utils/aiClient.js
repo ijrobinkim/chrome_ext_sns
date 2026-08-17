@@ -55,6 +55,10 @@
     html = html.replace(/\n\n/g, '<br><br>');
     html = html.replace(/\n/g, '<br>');
 
+    // Clean up invalid <br> tags inside/around tables that might be introduced by newline replacement
+    html = html.replace(/(<table[^>]*>|<tr[^>]*>|<td[^>]*>|<tbody>|<\/table>|<\/tbody>|<\/tr>|<\/td>)\s*(?:<br\s*\/?>\s*)+/gi, '$1');
+    html = html.replace(/(?:<br\s*\/?>\s*)+(<\/table>|<\/tbody>|<\/tr>|<\/td>)/gi, '$1');
+
     return html;
   }
 
@@ -118,8 +122,8 @@ ${imageUrls.map((url, idx) => `- 이미지 ${idx + 1}: ${url}`).join('\n')}
 - 본문 중간이나 하단에 '구매 전 스마트 체크' 또는 '실수를 줄이는 스마트 팁' 등 독창적인 노하우를 담은 스마트 팁 섹션을 포함시킵니다.
 - **제휴 수수료 안내 문구 규칙**: 반드시 전체 본문 내용의 맨 아래 마지막([BLOGSPOT_END] 바로 직전)에 가운데 정렬(Center)로 작성하고, 다른 폰트 스타일을 적용하세요. (예: 11px 크기, 옅은 회색 #888888, 이탤릭체, 본문 서체와 구분되는 서체 적용). HTML 예시:
   <p style="text-align: center; font-size: 11px; color: #888888; font-style: italic; font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif; margin-top: 30px;">${disclosureText}</p>
-- **제품 구매 링크 규칙**: 제휴 수수료 안내 문구 바로 위에는 클릭하여 제품 상세 정보나 후기 페이지로 넘어가고 싶게 만드는 매력적이고 직관적인 버튼형 제품 링크를 반드시 삽입해 주세요. HTML 예시:
-  <div style="text-align: center; margin-top: 35px; margin-bottom: 25px;"><a href="${affiliateLink}" target="_blank" style="display: inline-block; padding: 16px 36px; background: linear-gradient(90deg, #f97316 0%, #ea580c 100%); color: #ffffff; text-decoration: none; border-radius: 12px; font-weight: 800; font-size: 18px; box-shadow: 0 10px 20px rgba(234, 88, 12, 0.3); border-bottom: 4px solid #c2410c; font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;">🔥 [제품명] 특가 혜택 및 상세 정보 확인하러 가기</a></div>
+- **제품 구매 링크 규칙**: 제휴 수수료 안내 문구 바로 위에는 클릭하여 제품 상세 정보나 후기 페이지로 넘어가고 싶게 만드는 매력적이고 직관적인 버튼형 제품 링크를 반드시 삽입해 주세요. (네이버 블로그 복사 붙여넣기 시 서식이 깨지는 것을 방지하기 위해 반드시 아래 예시와 같이 <table> 태그를 활용한 버튼 구조를 그대로 작성해야 합니다.) HTML 예시:
+  <table align="center" style="border-collapse:collapse;margin:35px auto 25px auto;background:linear-gradient(90deg,#f97316 0%,#ea580c 100%);background-color:#ea580c;border-radius:12px;box-shadow:0 8px 16px rgba(234,88,12,0.3);border:none;width:auto;max-width:95%;"><tbody><tr><td align="center" style="padding:16px 36px;background:linear-gradient(90deg,#f97316 0%,#ea580c 100%);background-color:#ea580c;border-radius:12px;border:none;text-align:center;"><a href="${affiliateLink}" target="_blank" style="display:block;text-decoration:none;color:#ffffff;font-weight:800;font-size:18px;font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;"><strong style="color:#ffffff;font-weight:800;"><font color="#ffffff" style="font-size:18px;font-weight:bold;font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;">🔥 [제품명] 특가 혜택 및 상세 정보 확인하러 가기 ➔</font></strong></a></td></tr></tbody></table>
 
 [블로그 스타일 지정]
 현재 선택된 작문 스타일은 [${style}] 입니다.
@@ -128,8 +132,8 @@ ${imageUrls.map((url, idx) => `- 이미지 ${idx + 1}: ${url}`).join('\n')}
 - story: 친근한 수다방 형식의 솔직 담백 사용기 스토리텔링
 
 [공통 링크 규칙 및 기타]
-- **본문 중간 제품 링크 필수 삽입**: 독자의 구매 전환율을 높이기 위해, 글의 전개 흐름상 가장 설득력이 높아지는 중간 부분(예: 핵심 스펙 설명 직후, 극복 팁 소개 후)에 제휴 링크(${affiliateLink})를 눈에 띄는 박스/버튼 형태로 최소 1~2회 삽입하세요. HTML <a> 태그를 활용하되 시선을 끄는 스타일을 적용하세요. 예시:
-  <div style="text-align: center; margin: 30px 0;"><a href="${affiliateLink}" target="_blank" style="display: inline-block; padding: 15px 32px; background: linear-gradient(90deg, #2563eb 0%, #1d4ed8 100%); color: #ffffff; text-decoration: none; border-radius: 50px; font-weight: bold; font-size: 17px; box-shadow: 0 8px 16px rgba(37, 99, 235, 0.25); border-bottom: 4px solid #1e3a8a; font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;">👉 지금 바로 [제품명] 할인가 확인하기</a></div>
+- **본문 중간 제품 링크 필수 삽입**: 독자의 구매 전환율을 높이기 위해, 글의 전개 흐름상 가장 설득력이 높아지는 중간 부분(예: 핵심 스펙 설명 직후, 극복 팁 소개 후)에 제휴 링크(${affiliateLink})를 눈에 띄는 박스/버튼 형태로 최소 1~2회 삽입하세요. (네이버 블로그 복사 붙여넣기 시 서식이 깨지는 것을 방지하기 위해 반드시 아래 예시와 같이 <table> 태그를 활용한 버튼 구조를 그대로 작성해야 합니다.) HTML 예시:
+  <table align="center" style="border-collapse:collapse;margin:30px auto;background:linear-gradient(90deg,#2563eb 0%,#1d4ed8 100%);background-color:#2563eb;border-radius:50px;box-shadow:0 8px 16px rgba(37,99,235,0.25);border:none;width:auto;max-width:95%;"><tbody><tr><td align="center" style="padding:14px 32px;background:linear-gradient(90deg,#2563eb 0%,#1d4ed8 100%);background-color:#2563eb;border-radius:50px;border:none;text-align:center;"><a href="${affiliateLink}" target="_blank" style="display:block;text-decoration:none;color:#ffffff;font-weight:800;font-size:17px;font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;"><strong style="color:#ffffff;font-weight:800;"><font color="#ffffff" style="font-size:17px;font-weight:bold;font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;">👉 지금 바로 [제품명] 할인가 확인하기 ➔</font></strong></a></td></tr></tbody></table>
 - **링크 변조 금지**: 전달된 쿠팡 공식 숏링크(${affiliateLink})만을 변조나 환각 없이 정확하게 출력하세요. HTML <a> 태그를 사용해야 합니다.
 ${imageInstruction}
 `;
