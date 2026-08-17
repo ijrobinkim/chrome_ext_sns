@@ -23,6 +23,17 @@
       adminConfig = await window.CloudflareClient.loadAdminConfig();
     }
 
+    // Auto-detect Extension ID if running inside extension
+    const isExtension = window.location.protocol === 'chrome-extension:';
+    if (isExtension && adminConfig && window.location.host) {
+      if (adminConfig.extension_id !== window.location.host) {
+        adminConfig.extension_id = window.location.host;
+        if (window.CloudflareClient && typeof window.CloudflareClient.saveAdminConfig === 'function') {
+          window.CloudflareClient.saveAdminConfig(adminConfig).catch(e => console.warn('Auto-save extension_id failed:', e));
+        }
+      }
+    }
+
     if (sessionStorage.getItem('dashboard_logged_in') === 'true') {
       if (loginOverlay) loginOverlay.style.display = 'none';
       syncGeminiKeyToLocalStorage();
@@ -88,6 +99,24 @@
     const profileSelect = document.getElementById('mypage-profile-select');
     if (profileSelect) {
       fillProfileFields(profileSelect.value);
+    }
+
+    // Chrome Extension ID UI handler
+    const isExtension = window.location.protocol === 'chrome-extension:';
+    const detectedInfo = document.getElementById('mypage-ext-detected-info');
+    const webInfo = document.getElementById('mypage-ext-web-info');
+    const extIdInput = document.getElementById('mypage-ext-id');
+
+    if (isExtension) {
+      if (detectedInfo) detectedInfo.style.display = 'block';
+      if (webInfo) webInfo.style.display = 'none';
+    } else {
+      if (detectedInfo) detectedInfo.style.display = 'none';
+      if (webInfo) webInfo.style.display = 'flex';
+      if (extIdInput) {
+        extIdInput.value = adminConfig.extension_id || '';
+      }
+      updateConstructedUrl();
     }
 
     renderCustomLinks();
@@ -172,6 +201,19 @@
       row.appendChild(delBtn);
       container.appendChild(row);
     });
+  }
+
+  function updateConstructedUrl() {
+    const extIdInput = document.getElementById('mypage-ext-id');
+    const constructedInput = document.getElementById('mypage-ext-constructed-url');
+    if (!constructedInput) return;
+
+    const id = extIdInput ? extIdInput.value.trim() : (adminConfig ? adminConfig.extension_id : '');
+    if (id) {
+      constructedInput.value = `chrome-extension://${id}/collected.html`;
+    } else {
+      constructedInput.value = 'ID를 먼저 입력해 주세요.';
+    }
   }
 
   function bindMyPageEvents() {
@@ -306,6 +348,59 @@
           renderCustomLinks();
         } else {
           alert('링크 추가에 실패했습니다. DB 연결을 확인해 주세요.');
+        }
+      });
+    }
+
+    // 6. Chrome Extension ID event bindings
+    const saveExtIdBtn = document.getElementById('btn-mypage-save-ext-id');
+    const copyExtUrlBtn = document.getElementById('btn-mypage-copy-ext-url');
+    const goExtUrlBtn = document.getElementById('btn-mypage-go-ext-url');
+    const extIdInputInput = document.getElementById('mypage-ext-id');
+
+    if (saveExtIdBtn && extIdInputInput) {
+      saveExtIdBtn.addEventListener('click', async () => {
+        const id = extIdInputInput.value.trim();
+        if (!id) {
+          alert('확장 프로그램 ID를 입력해 주세요.');
+          return;
+        }
+
+        adminConfig.extension_id = id;
+        const success = await window.CloudflareClient.saveAdminConfig(adminConfig);
+        if (success) {
+          updateConstructedUrl();
+          alert('✅ 크롬 확장 프로그램 ID가 성공적으로 DB에 저장되었습니다.');
+        } else {
+          alert('❌ ID 저장에 실패했습니다. DB 연결을 확인해 주세요.');
+        }
+      });
+
+      extIdInputInput.addEventListener('input', () => {
+        updateConstructedUrl();
+      });
+    }
+
+    if (copyExtUrlBtn) {
+      copyExtUrlBtn.addEventListener('click', () => {
+        const constructedInput = document.getElementById('mypage-ext-constructed-url');
+        if (constructedInput && constructedInput.value && !constructedInput.value.startsWith('ID를')) {
+          navigator.clipboard.writeText(constructedInput.value).then(() => {
+            alert('📋 확장 프로그램 대시보드 URL이 클립보드에 복사되었습니다! 새 탭 주소창에 붙여넣어 접속하세요.');
+          });
+        } else {
+          alert('먼저 올바른 확장 프로그램 ID를 입력하고 저장해 주세요.');
+        }
+      });
+    }
+
+    if (goExtUrlBtn) {
+      goExtUrlBtn.addEventListener('click', () => {
+        const constructedInput = document.getElementById('mypage-ext-constructed-url');
+        if (constructedInput && constructedInput.value && !constructedInput.value.startsWith('ID를')) {
+          window.open(constructedInput.value, '_blank');
+        } else {
+          alert('먼저 올바른 확장 프로그램 ID를 입력하고 저장해 주세요.');
         }
       });
     }

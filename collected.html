@@ -332,6 +332,36 @@
                 <a href="https://aistudio.google.com/" target="_blank" style="font-size: 12px; color: #818cf8; text-decoration: underline;">Google AI Studio에서 API 키 받기 ➔</a>
               </div>
 
+              <!-- Chrome Extension ID Settings -->
+              <div style="background: #1e1e2f; border: 1px solid #313244; border-radius: 12px; padding: 20px;">
+                <h3 style="font-size: 15px; color: #a5b4fc; font-weight: 700; margin-bottom: 12px;">🔌 크롬 확장 프로그램 연동</h3>
+                
+                <div id="mypage-ext-detected-info" style="display: none; padding: 10px; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px; font-size: 12.5px; color: #93c5fd; line-height: 1.4; margin-bottom: 12px;">
+                  ℹ️ 현재 확장 프로그램(전용 대시보드)으로 접속 중입니다. ID가 안전하게 저장되었습니다.
+                </div>
+
+                <div id="mypage-ext-web-info" style="display: flex; flex-direction: column; gap: 8px;">
+                  <p style="font-size: 12px; color: #94a3b8; margin-bottom: 8px;">웹 버전에서는 쿠팡 수집 기능이 제한되므로 확장 프로그램 ID를 입력하여 전용 대시보드 주소를 빌드 및 저장하세요.</p>
+                  <div>
+                    <label style="display: block; font-size: 12px; color: #cbd5e1; margin-bottom: 6px;">확장 프로그램 고유 ID</label>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                      <input type="text" id="mypage-ext-id" placeholder="예: jkhgfdsa..." style="flex: 1; padding: 10px 12px; background: #12121e; border: 1px solid #313244; color: #fff; border-radius: 8px; font-size: 13px; outline: none;">
+                      <button id="btn-mypage-save-ext-id" class="db-modal-btn btn-gradient" style="margin: 0; padding: 10px 20px; white-space: nowrap; height: 38px;">저장</button>
+                    </div>
+                  </div>
+                  
+                  <div style="margin-top: 8px; border-top: 1px solid #282838; padding-top: 12px;">
+                    <label style="display: block; font-size: 12px; color: #cbd5e1; margin-bottom: 6px;">확장 프로그램 전용 대시보드 바로가기</label>
+                    <input type="text" id="mypage-ext-constructed-url" readonly style="width: 100%; padding: 8px; background: #12121e; border: 1px solid #313244; color: #a5b4fc; border-radius: 6px; font-size: 12px; margin-bottom: 8px; outline: none; border-style: dashed;" value="ID를 먼저 저장해 주세요.">
+                    <div style="display: flex; gap: 8px;">
+                      <button id="btn-mypage-copy-ext-url" class="db-modal-btn btn-purple" style="flex: 1; margin: 0; padding: 8px; font-size: 12px; font-weight: 700;">주소 복사</button>
+                      <button id="btn-mypage-go-ext-url" class="db-modal-btn btn-purple" style="flex: 1; margin: 0; padding: 8px; font-size: 12px; font-weight: 700;">대시보드 이동</button>
+                    </div>
+                    <p style="font-size: 11px; color: #94a3b8; margin-top: 6px; line-height: 1.4;">💡 크롬 보안 정책상 '이동'이 안 열리는 경우 **[주소 복사]** 후 새 탭 주소창에 붙여넣어 접속하세요!</p>
+                  </div>
+                </div>
+              </div>
+
               <!-- Password Change Section -->
               <div style="background: #1e1e2f; border: 1px solid #313244; border-radius: 12px; padding: 20px;">
                 <h3 style="font-size: 15px; color: #a5b4fc; font-weight: 700; margin-bottom: 12px;">🔒 관리자 비밀번호 변경</h3>
