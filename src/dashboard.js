@@ -234,6 +234,37 @@
       });
     }
 
+    // Toggle Gemini Key visibility
+    const toggleKeyVisibilityBtn = document.getElementById('btn-mypage-toggle-key-visibility');
+    if (toggleKeyVisibilityBtn && geminiInput) {
+      toggleKeyVisibilityBtn.addEventListener('click', () => {
+        if (geminiInput.type === 'password') {
+          geminiInput.type = 'text';
+          toggleKeyVisibilityBtn.textContent = '🔒';
+          toggleKeyVisibilityBtn.title = '비밀번호 숨기기';
+        } else {
+          geminiInput.type = 'password';
+          toggleKeyVisibilityBtn.textContent = '👁️';
+          toggleKeyVisibilityBtn.title = '비밀번호 표시';
+        }
+      });
+    }
+
+    // Copy Gemini Key
+    const copyKeyBtn = document.getElementById('btn-mypage-copy-key');
+    if (copyKeyBtn && geminiInput) {
+      copyKeyBtn.addEventListener('click', () => {
+        const val = geminiInput.value.trim();
+        if (val) {
+          navigator.clipboard.writeText(val).then(() => {
+            alert('📋 Google Gemini API Key가 클립보드에 복사되었습니다.');
+          });
+        } else {
+          alert('복사할 API Key가 없습니다. 먼저 입력하고 저장해 주세요.');
+        }
+      });
+    }
+
     const changePwBtn = document.getElementById('btn-mypage-change-pw');
     const currentPwInput = document.getElementById('mypage-current-pw');
     const newPwInput = document.getElementById('mypage-new-pw');

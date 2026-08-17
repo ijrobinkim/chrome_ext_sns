@@ -243,6 +243,16 @@
           </h2>
         </div>
 
+        <!-- Top Highlight Shortcuts -->
+        <div style="display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap;">
+          <a href="https://partners.coupang.com" target="_blank" style="flex: 1; min-width: 250px; display: flex; align-items: center; justify-content: center; gap: 10px; background: linear-gradient(135deg, #fb923c 0%, #ea580c 100%); border-radius: 12px; padding: 18px 24px; color: #fff; text-decoration: none; font-size: 15px; font-weight: 800; box-shadow: 0 4px 15px rgba(234, 88, 12, 0.25); transition: all 0.2s;" onmouseenter="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(234, 88, 12, 0.35)';" onmouseleave="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(234, 88, 12, 0.25)';">
+            <span>🛒 쿠팡 파트너스 바로가기</span> ➔
+          </a>
+          <a href="https://sharelink.toss.im/home" target="_blank" style="flex: 1; min-width: 250px; display: flex; align-items: center; justify-content: center; gap: 10px; background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%); border-radius: 12px; padding: 18px 24px; color: #fff; text-decoration: none; font-size: 15px; font-weight: 800; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.25); transition: all 0.2s;" onmouseenter="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(37, 99, 235, 0.35)';" onmouseleave="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(37, 99, 235, 0.25)';">
+            <span>💙 토스 쉐어링크 바로가기</span> ➔
+          </a>
+        </div>
+
         <div style="display: flex; flex-direction: column; gap: 24px;">
           <!-- Quick Shortcuts Grid -->
           <div style="background: #1e1e2f; border: 1px solid #313244; border-radius: 12px; padding: 20px;">
@@ -325,8 +335,12 @@
               <div style="background: #1e1e2f; border: 1px solid #313244; border-radius: 12px; padding: 20px;">
                 <h3 style="font-size: 15px; color: #a5b4fc; font-weight: 700; margin-bottom: 12px;">🔑 Google Gemini API Key 설정</h3>
                 <p style="font-size: 12px; color: #94a3b8; margin-bottom: 16px;">여기에 설정된 API 키는 데이터베이스에 영구 저장되며, 글 자동생성 시 항상 우선 로드되어 키 분실을 방지합니다.</p>
-                <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px;">
-                  <input type="password" id="mypage-gemini-key" placeholder="Google Gemini API Key를 입력하세요" style="flex: 1; padding: 10px 12px; background: #12121e; border: 1px solid #313244; color: #fff; border-radius: 8px; font-size: 13px; outline: none;">
+                 <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px;">
+                  <div style="position: relative; flex: 1; display: flex; align-items: center;">
+                    <input type="password" id="mypage-gemini-key" placeholder="Google Gemini API Key를 입력하세요" style="width: 100%; padding: 10px 40px 10px 12px; background: #12121e; border: 1px solid #313244; color: #fff; border-radius: 8px; font-size: 13px; outline: none;">
+                    <button id="btn-mypage-toggle-key-visibility" style="position: absolute; right: 10px; background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 14px; padding: 4px; outline: none; display: flex; align-items: center; justify-content: center;" title="비밀번호 표시/숨기기">👁️</button>
+                  </div>
+                  <button id="btn-mypage-copy-key" class="db-modal-btn btn-purple" style="margin: 0; padding: 10px 15px; white-space: nowrap; height: 38px;" title="API 키 복사">📋 복사</button>
                   <button id="btn-mypage-save-key" class="db-modal-btn btn-gradient" style="margin: 0; padding: 10px 20px; white-space: nowrap; height: 38px;">저장</button>
                 </div>
                 <a href="https://aistudio.google.com/" target="_blank" style="font-size: 12px; color: #818cf8; text-decoration: underline;">Google AI Studio에서 API 키 받기 ➔</a>
